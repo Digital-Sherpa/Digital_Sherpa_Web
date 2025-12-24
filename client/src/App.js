@@ -1,0 +1,1028 @@
+import "./style.css";
+import "leaflet/dist/leaflet.css";
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import L from "leaflet";
+
+import { getPlaces, getRoadmaps, getRoadmapFull } from "./services/api";
+
+// Create marker icon with image from Cloudinary
+const createImageIcon = (imageUrl, color, fallbackEmoji) => {
+  const hasImage = imageUrl && !imageUrl.includes("undefined");
+  
+  return L.divIcon({
+    className: "custom-div-icon",
+    html: hasImage 
+      ? `
+        <div class="marker-container" style="border-color: ${color};">
+          <img src="${imageUrl}" alt="place" class="marker-image" />
+        </div>
+      `
+      : `
+        <div class="marker-container marker-emoji" style="border-color: ${color};">
+          ${fallbackEmoji}
+        </div>
+      `,
+    iconSize: [52, 52],
+    iconAnchor: [26, 26],
+    popupAnchor: [0, -26],
+  });
+};
+
+// User location icon
+const userIcon = L.divIcon({
+  className: "custom-div-icon",
+  html: `
+    <div class="user-marker">
+      <div class="user-marker-pulse"></div>
+      <div class="user-marker-dot"></div>
+    </div>
+  `,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+});
+
+// Category colors
+const categoryColors = {
+  historical: "#ef4444",
+  workshop: "#10b981",
+  restaurant: "#f59e0b",
+  default: "#6b7280",
+};
+
+const categoryEmojis = {
+  historical: "🏛️",
+  workshop: "🎨",
+  restaurant: "🍽️",
+  default: "📍",
+};
+
+// Fetch walking route from OSRM
+async function getWalkingRoute(start, end) {
+  try {
+    const url = `https://router.project-osrm.org/route/v1/foot/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.routes && data.routes.length > 0) {
+      return data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+    }
+    return null;
+  } catch (error) {
+    console.error("Routing error:", error);
+    return null;
+  }
+}
+
+// Fetch complete route through all stops
+async function getCompleteRoute(stops) {
+  if (stops.length < 2) return [];
+  
+  const allRouteCoords = [];
+  
+  for (let i = 0; i < stops.length - 1; i++) {
+    const start = stops[i];
+    const end = stops[i + 1];
+    const segment = await getWalkingRoute(start, end);
+    
+    if (segment) {
+      if (allRouteCoords.length > 0) {
+        allRouteCoords.push(...segment.slice(1));
+      } else {
+        allRouteCoords.push(...segment);
+      }
+    } else {
+      allRouteCoords.push(start, end);
+    }
+  }
+  
+  return allRouteCoords;
+}
+
+// User Location Marker (no auto-centering)
+function UserLocationMarker({ position }) {
+  if (!position) return null;
+
+  return (
+    <Marker position={position} icon={userIcon}>
+      <Popup>
+        <div className="popup-content">
+          <h3>📍 Your Location</h3>
+          <p>You are here</p>
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
+
+// Center to Location Button
+function CenterButton({ position, map }) {
+  const handleCenter = () => {
+    if (position && map) {
+      map.flyTo(position, 17, { duration: 1 });
+    }
+  };
+
+  return (
+    <button 
+      className="center-btn"
+      onClick={handleCenter}
+      disabled={!position}
+      title="Center to my location"
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+      </svg>
+    </button>
+  );
+}
+
+// Map Controller Component
+function MapController({ setMapInstance }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    setMapInstance(map);
+  }, [map, setMapInstance]);
+  
+  return null;
+}
+
+// Animated Route Line with street-based path
+function AnimatedStreetRoute({ routeCoords, color, isNavigationRoute = false }) {
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset((prev) => (prev - 2) % 100);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!routeCoords || routeCoords.length < 2) return null;
+
+  return (
+    <>
+      <Polyline
+        positions={routeCoords}
+        pathOptions={{
+          color: isNavigationRoute ? "#10b981" : color,
+          weight: isNavigationRoute ? 8 : 7,
+          opacity: 0.3,
+          lineCap: "round",
+          lineJoin: "round",
+        }}
+      />
+      <Polyline
+        positions={routeCoords}
+        pathOptions={{
+          color: isNavigationRoute ? "#34d399" : color,
+          weight: isNavigationRoute ? 5 : 4,
+          opacity: 1,
+          lineCap: "round",
+          lineJoin: "round",
+          dashArray: "12, 8",
+          dashOffset: String(offset),
+        }}
+      />
+    </>
+  );
+}
+
+// Fit Bounds Component
+function FitBounds({ coordinates }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (coordinates && coordinates.length > 0) {
+      const bounds = L.latLngBounds(coordinates);
+      map.fitBounds(bounds, { padding: [100, 100], maxZoom: 17 });
+    }
+  }, [coordinates, map]);
+
+  return null;
+}
+
+// Compact Place Popup Component - Redesigned
+function PlacePopup({ place, stopNumber, isSponsored, onMoreDetails }) {
+  // Get opening status
+  const getOpeningStatus = () => {
+    if (!place.openingHours) return 'Open Now';
+    const parts = place.openingHours.split('-');
+    if (parts.length === 2) {
+      return `Open 'til ${parts[1].trim()}`;
+    }
+    return place.openingHours;
+  };
+
+  const hasVideo = place.videoUrl || (place.videos && place.videos.length > 0);
+
+  return (
+    <div className="compact-popup">
+      {/* Header */}
+      <div className="compact-popup-header">
+        <div className="compact-popup-avatar">
+          {place.imageUrl ? (
+            <img src={place.imageUrl} alt={place.name} />
+          ) : (
+            <span>{categoryEmojis[place.category] || "📍"}</span>
+          )}
+        </div>
+        <div className="compact-popup-title">
+          <h3>{place.name}</h3>
+          <span className="compact-popup-status">
+            <span className="status-dot"></span>
+            {getOpeningStatus()}
+          </span>
+        </div>
+      </div>
+
+      {/* Info Pills */}
+      <div className="compact-popup-pills">
+        {place.openingHours && (
+          <div className="info-pill">
+            <span className="pill-icon">🕐</span>
+            <span>{place.openingHours}</span>
+          </div>
+        )}
+        {place.entryFee && place.entryFee.foreign > 0 && (
+          <div className="info-pill highlight">
+            <span className="pill-icon">💰</span>
+            <span>Rs. {place.entryFee.foreign}</span>
+          </div>
+        )}
+        {hasVideo && (
+          <div className="info-pill video">
+            <span className="pill-icon">🎬</span>
+            <span>Video</span>
+          </div>
+        )}
+        {isSponsored && (
+          <div className="info-pill sponsored">
+            <span className="pill-icon">⭐</span>
+            <span>Sponsored</span>
+          </div>
+        )}
+        {stopNumber && (
+          <div className="info-pill stop">
+            <span className="pill-icon">📍</span>
+            <span>Stop {stopNumber}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Brief Description */}
+      <p className="compact-popup-desc">
+        {place.description?.length > 100 
+          ? place.description.substring(0, 100) + '...' 
+          : place.description}
+      </p>
+
+      {/* Image Preview */}
+      {place.imageUrl && (
+        <div className="compact-popup-image">
+          <img src={place.imageUrl} alt={place.name} />
+        </div>
+      )}
+
+      {/* Tags */}
+      {place.tags && place.tags.length > 0 && (
+        <div className="compact-popup-tags">
+          {place.tags.slice(0, 3).map((tag, idx) => (
+            <span key={idx} className="compact-tag">#{tag}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Action Button */}
+      <button 
+        className="compact-popup-btn" 
+        onClick={(e) => {
+          e.stopPropagation();
+          onMoreDetails && onMoreDetails(place);
+        }}
+      >
+        More Details
+      </button>
+    </div>
+  );
+}
+
+// Place Detail Modal with Video Support - Improved
+function PlaceDetailModal({ place, onClose }) {
+  const [activeTab, setActiveTab] = useState('info');
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    // Auto-play video when video tab is active
+    if (activeTab === 'video' && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [activeTab]);
+
+  if (!place) return null;
+
+  // Combine images
+  const images = [];
+  if (place.imageUrl) images.push(place.imageUrl);
+  if (place.gallery && place.gallery.length > 0) {
+    place.gallery.forEach(img => {
+      if (img !== place.imageUrl) images.push(img);
+    });
+  }
+
+  // Get videos
+  const videos = place.videos && place.videos.length > 0 
+    ? place.videos 
+    : place.videoUrl 
+      ? [{ url: place.videoUrl, title: 'Video Tour' }] 
+      : [];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        
+        {/* Hero Image */}
+        {place.imageUrl && (
+          <div className="modal-hero">
+            <img src={place.imageUrl} alt={place.name} />
+            {videos.length > 0 && (
+              <button 
+                className="play-video-btn"
+                onClick={() => setActiveTab('video')}
+              >
+                ▶ Watch Video
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="modal-tabs">
+          <button 
+            className={`modal-tab ${activeTab === 'info' ? 'active' : ''}`}
+            onClick={() => setActiveTab('info')}
+          >
+            📋 Info
+          </button>
+          {images.length > 1 && (
+            <button 
+              className={`modal-tab ${activeTab === 'gallery' ? 'active' : ''}`}
+              onClick={() => setActiveTab('gallery')}
+            >
+              🖼️ Gallery
+            </button>
+          )}
+          {videos.length > 0 && (
+            <button 
+              className={`modal-tab ${activeTab === 'video' ? 'active' : ''}`}
+              onClick={() => setActiveTab('video')}
+            >
+              🎬 Video
+            </button>
+          )}
+        </div>
+
+        <div className="modal-body">
+          {/* Info Tab */}
+          {activeTab === 'info' && (
+            <>
+              <h2>{place.name}</h2>
+              <p className="modal-category">
+                {categoryEmojis[place.category]} {place.category}
+              </p>
+              
+              <p className="modal-description">{place.description}</p>
+
+              {/* Details Grid */}
+              <div className="modal-details-grid">
+                {place.openingHours && (
+                  <div className="detail-item">
+                    <span className="detail-icon">🕐</span>
+                    <div>
+                      <strong>Opening Hours</strong>
+                      <p>{place.openingHours}</p>
+                    </div>
+                  </div>
+                )}
+                {place.address && (
+                  <div className="detail-item">
+                    <span className="detail-icon">📍</span>
+                    <div>
+                      <strong>Address</strong>
+                      <p>{place.address}</p>
+                    </div>
+                  </div>
+                )}
+                {place.entryFee && (
+                  <div className="detail-item">
+                    <span className="detail-icon">💰</span>
+                    <div>
+                      <strong>Entry Fee</strong>
+                      <p>
+                        Nepali: Free | SAARC: Rs. {place.entryFee.saarc} | Foreign: Rs. {place.entryFee.foreign}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Workshop Section */}
+              {place.hasWorkshop && (
+                <div className="modal-workshop">
+                  <h3>🎨 Workshop Available</h3>
+                  <p>Experience hands-on learning with master craftsmen.</p>
+                  {place.workshopPrice && (
+                    <div className="workshop-prices">
+                      {place.workshopPrice.halfDay && (
+                        <div className="price-card">
+                          <span className="price-label">Half Day</span>
+                          <span className="price-value">Rs. {place.workshopPrice.halfDay}</span>
+                        </div>
+                      )}
+                      {place.workshopPrice.fullDay && (
+                        <div className="price-card">
+                          <span className="price-label">Full Day</span>
+                          <span className="price-value">Rs. {place.workshopPrice.fullDay}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <button className="book-workshop-btn">Book Workshop</button>
+                </div>
+              )}
+
+              {/* Tags */}
+              {place.tags && place.tags.length > 0 && (
+                <div className="modal-tags">
+                  {place.tags.map((tag, idx) => (
+                    <span key={idx} className="modal-tag">#{tag}</span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Gallery Tab - Improved */}
+          {activeTab === 'gallery' && (
+            <div className="modal-gallery">
+              <h3>📸 Photo Gallery</h3>
+              <div className="gallery-grid-improved">
+                {images.map((img, idx) => (
+                  <div key={idx} className="gallery-item-large">
+                    <img src={img} alt={`${place.name} ${idx + 1}`} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Video Tab - Improved */}
+          {activeTab === 'video' && (
+            <div className="modal-video">
+              {videos.map((video, idx) => (
+                <div key={idx} className="video-player-container">
+                  {video.title && <h4 className="video-title">{video.title}</h4>}
+                  <video 
+                    ref={idx === 0 ? videoRef : null}
+                    controls 
+                    autoPlay
+                    playsInline
+                    preload="auto"
+                    poster={video.thumbnail || place.imageUrl}
+                    className="video-player"
+                  >
+                    <source src={video.url} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [places, setPlaces] = useState([]);
+  const [roadmaps, setRoadmaps] = useState([]);
+  const [selectedRoadmap, setSelectedRoadmap] = useState(null);
+  const [fullRoadmap, setFullRoadmap] = useState(null);
+  const [userPosition, setUserPosition] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [mapInstance, setMapInstance] = useState(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [routeCoords, setRouteCoords] = useState([]);
+  const [navigationRoute, setNavigationRoute] = useState([]);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [isPanelMinimized, setIsPanelMinimized] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [activeStopIndex, setActiveStopIndex] = useState(0);
+  
+  // Refs for markers to control popups
+  const markerRefs = useRef({});
+
+  // Fetch initial data
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [placesData, roadmapsData] = await Promise.all([
+          getPlaces(),
+          getRoadmaps(),
+        ]);
+        setPlaces(placesData);
+        setRoadmaps(roadmapsData);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Get user location (no auto-centering)
+  useEffect(() => {
+    if (navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          setUserPosition([pos.coords.latitude, pos.coords.longitude]);
+        },
+        (err) => console.log("Location error:", err),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+      
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
+
+  // Fetch full roadmap when selected - HANDLE ERRORS
+  useEffect(() => {
+    async function fetchFullRoadmap() {
+      if (!selectedRoadmap) {
+        setFullRoadmap(null);
+        setRouteCoords([]);
+        setNavigationRoute([]);
+        setIsNavigating(false);
+        setIsPanelMinimized(false);
+        return;
+      }
+      try {
+        const data = await getRoadmapFull(selectedRoadmap.slug);
+        
+        // Check if roadmap has valid stops
+        if (data._validStopCount < 2) {
+          setError(`This trail has only ${data._validStopCount} valid stop(s). Minimum 2 required.`);
+          setSelectedRoadmap(null);
+          setFullRoadmap(null);
+          return;
+        }
+        
+        setFullRoadmap(data);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch roadmap:", err);
+        setError(err.message || "This trail is no longer available");
+        setSelectedRoadmap(null);
+        setFullRoadmap(null);
+      }
+    }
+    fetchFullRoadmap();
+  }, [selectedRoadmap]);
+
+  // Calculate street-based route when roadmap changes
+  useEffect(() => {
+    async function calculateRoute() {
+      if (!fullRoadmap || places.length === 0) {
+        setRouteCoords([]);
+        return;
+      }
+
+      setRouteLoading(true);
+
+      const stopCoords = fullRoadmap.stops
+        .sort((a, b) => a.order - b.order)
+        .map((stop) => {
+          const place = places.find((p) => p.slug === stop.placeSlug);
+          return place ? [place.coordinates.lat, place.coordinates.lng] : null;
+        })
+        .filter(Boolean);
+
+      if (stopCoords.length >= 2) {
+        const route = await getCompleteRoute(stopCoords);
+        setRouteCoords(route.length > 0 ? route : stopCoords);
+      }
+
+      setRouteLoading(false);
+    }
+
+    calculateRoute();
+  }, [fullRoadmap, places]);
+
+  // Filter roadmaps
+  const filteredRoadmaps = useMemo(() => {
+    return roadmaps.filter((r) => {
+      const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter = activeFilter === "all" || r.category === activeFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [roadmaps, searchQuery, activeFilter]);
+
+  // Get visible places - ONLY show roadmap stops when a roadmap is selected
+  const visiblePlaces = useMemo(() => {
+    // If no roadmap selected, show all places
+    if (!fullRoadmap) return places;
+    
+    // Get all place slugs from stops and sponsored stops
+    const stopSlugs = fullRoadmap.stops.map((s) => s.placeSlug);
+    const sponsoredSlugs = fullRoadmap.sponsoredStops.map((s) => s.placeSlug);
+    const allSlugs = [...stopSlugs, ...sponsoredSlugs];
+    
+    // Filter places to only show those in the roadmap
+    return places.filter((p) => allSlugs.includes(p.slug));
+  }, [places, fullRoadmap]);
+
+  // Open popup for a specific place
+  const openPopupForPlace = useCallback((placeSlug) => {
+    const markerRef = markerRefs.current[placeSlug];
+    if (markerRef) {
+      markerRef.openPopup();
+    }
+  }, []);
+
+  // Start Navigation handler
+  const handleStartNavigation = useCallback(async () => {
+    if (!userPosition || !fullRoadmap || places.length === 0) {
+      alert("Please ensure location is enabled and a trail is selected.");
+      return;
+    }
+
+    setRouteLoading(true);
+    setIsNavigating(true);
+    setActiveStopIndex(0);
+
+    // Get first stop coordinates
+    const firstStop = fullRoadmap.stops.find((s) => s.order === 1);
+    if (!firstStop) {
+      setRouteLoading(false);
+      return;
+    }
+
+    const firstPlace = places.find((p) => p.slug === firstStop.placeSlug);
+    if (!firstPlace) {
+      setRouteLoading(false);
+      return;
+    }
+
+    const firstStopCoords = [firstPlace.coordinates.lat, firstPlace.coordinates.lng];
+
+    // Get walking route from user to first stop
+    const navRoute = await getWalkingRoute(userPosition, firstStopCoords);
+    
+    if (navRoute) {
+      setNavigationRoute(navRoute);
+      
+      // Fit map to show both user location and first stop
+      if (mapInstance) {
+        const bounds = L.latLngBounds([userPosition, firstStopCoords]);
+        mapInstance.fitBounds(bounds, { padding: [100, 100], maxZoom: 17 });
+      }
+    } else {
+      setNavigationRoute([userPosition, firstStopCoords]);
+    }
+
+    setRouteLoading(false);
+
+    // Open popup for first stop after a short delay
+    setTimeout(() => {
+      openPopupForPlace(firstStop.placeSlug);
+    }, 500);
+  }, [userPosition, fullRoadmap, places, mapInstance, openPopupForPlace]);
+
+  // Stop Navigation
+  const handleStopNavigation = () => {
+    setIsNavigating(false);
+    setNavigationRoute([]);
+    setIsPanelMinimized(false);
+    setActiveStopIndex(0);
+  };
+
+  // Handle clicking on a stop in the list
+  const handleStopClick = (stop, index) => {
+    setActiveStopIndex(index);
+    const place = places.find((p) => p.slug === stop.placeSlug);
+    if (place && mapInstance) {
+      mapInstance.flyTo([place.coordinates.lat, place.coordinates.lng], 18, { duration: 0.5 });
+      setTimeout(() => {
+        openPopupForPlace(stop.placeSlug);
+      }, 600);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="loading-overlay">
+        <div className="loading-spinner"></div>
+        <p>Loading Digital Sherpa...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-container">
+      {error && <div className="error-toast">{error}</div>}
+
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <div className="logo">
+            <div className="logo-icon">🏔️</div>
+            <h1>Digital Sherpa</h1>
+          </div>
+        </div>
+
+        <div className="sidebar-header">
+          <h2>🗺️ Explore Trails</h2>
+
+          {/* Search */}
+          <div className="search-box">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Search trails..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="filter-row">
+            <button
+              className={`filter-btn ${activeFilter === "all" ? "active" : ""}`}
+              onClick={() => setActiveFilter("all")}
+            >
+              All
+            </button>
+            <button
+              className={`filter-btn ${activeFilter === "woodcarving" ? "active" : ""}`}
+              onClick={() => setActiveFilter("woodcarving")}
+            >
+              🪵 Wood
+            </button>
+            <button
+              className={`filter-btn ${activeFilter === "pottery" ? "active" : ""}`}
+              onClick={() => setActiveFilter("pottery")}
+            >
+              🏺 Pottery
+            </button>
+            <button
+              className={`filter-btn ${activeFilter === "heritage" ? "active" : ""}`}
+              onClick={() => setActiveFilter("heritage")}
+            >
+              🏛️ Heritage
+            </button>
+          </div>
+        </div>
+
+        {/* Trail List */}
+        <div className="list-container">
+          {filteredRoadmaps.map((roadmap) => (
+            <div
+              key={roadmap._id}
+              className={`trail-card ${selectedRoadmap?.slug === roadmap.slug ? "active" : ""}`}
+              onClick={() => {
+                setSelectedRoadmap(roadmap);
+                setIsNavigating(false);
+                setNavigationRoute([]);
+                setIsPanelMinimized(false);
+              }}
+            >
+              <div className="trail-icon" style={{ borderColor: roadmap.color }}>
+                {roadmap.icon}
+              </div>
+              <div className="trail-info">
+                <h4>{roadmap.name}</h4>
+                <div className="trail-meta">
+                  <span>🕐 {roadmap.duration}</span>
+                  <span>📏 {roadmap.distance}</span>
+                </div>
+              </div>
+              <span className="status-badge open">Active</span>
+            </div>
+          ))}
+
+          {selectedRoadmap && (
+            <button
+              className="trail-card clear-card"
+              onClick={() => {
+                setSelectedRoadmap(null);
+                setIsNavigating(false);
+                setNavigationRoute([]);
+                setIsPanelMinimized(false);
+              }}
+            >
+              ✕ Clear Selection
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* Map */}
+      <div className="map-wrapper">
+        <MapContainer
+          center={[27.672108, 85.42834]}
+          zoom={16}
+          style={{ height: "100%", width: "100%" }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+
+          <MapController setMapInstance={setMapInstance} />
+
+          {/* User Location */}
+          <UserLocationMarker position={userPosition} />
+
+          {/* Place Markers - Only visible places (filtered by roadmap) */}
+          {visiblePlaces.map((place) => {
+            const color = categoryColors[place.category] || categoryColors.default;
+            const emoji = categoryEmojis[place.category] || categoryEmojis.default;
+            const icon = createImageIcon(place.imageUrl, color, emoji);
+            const stopNumber = fullRoadmap?.stops.find((s) => s.placeSlug === place.slug)?.order;
+            const isSponsored = fullRoadmap?.sponsoredStops.some((s) => s.placeSlug === place.slug);
+
+            return (
+              <Marker
+                key={place._id}
+                position={[place.coordinates.lat, place.coordinates.lng]}
+                icon={icon}
+                ref={(ref) => {
+                  if (ref) {
+                    markerRefs.current[place.slug] = ref;
+                  }
+                }}
+              >
+                <Popup className="compact-popup-container" maxWidth={280} minWidth={260}>
+                  <PlacePopup
+                    place={place}
+                    stopNumber={stopNumber}
+                    isSponsored={isSponsored}
+                    onMoreDetails={setSelectedPlace}
+                  />
+                </Popup>
+              </Marker>
+            );
+          })}
+
+          {/* Street-based Route for Selected Trail */}
+          {fullRoadmap && routeCoords.length > 1 && (
+            <>
+              <AnimatedStreetRoute
+                routeCoords={routeCoords}
+                color={fullRoadmap.color || "#10b981"}
+              />
+              {!isNavigating && <FitBounds coordinates={routeCoords} />}
+            </>
+          )}
+
+          {/* Navigation Route (User to First Stop) */}
+          {isNavigating && navigationRoute.length > 1 && (
+            <AnimatedStreetRoute
+              routeCoords={navigationRoute}
+              color="#10b981"
+              isNavigationRoute={true}
+            />
+          )}
+        </MapContainer>
+
+        {/* Map Controls */}
+        <div className="map-controls">
+          <CenterButton position={userPosition} map={mapInstance} />
+        </div>
+
+        {/* Route Loading Indicator */}
+        {routeLoading && (
+          <div className="route-loading">
+            <div className="loading-spinner small"></div>
+            <span>Calculating route...</span>
+          </div>
+        )}
+
+        {/* Info Panel - Minimizable */}
+        {fullRoadmap && (
+          <div className={`info-panel ${isPanelMinimized ? 'minimized' : ''}`}>
+            {/* Minimize/Maximize Button */}
+            <button
+              className="minimize-btn"
+              onClick={() => setIsPanelMinimized(!isPanelMinimized)}
+              title={isPanelMinimized ? "Expand" : "Minimize"}
+            >
+              {isPanelMinimized ? '▲' : '▼'}
+            </button>
+
+            <button
+              className="close-btn"
+              onClick={() => {
+                setSelectedRoadmap(null);
+                setIsNavigating(false);
+                setNavigationRoute([]);
+                setIsPanelMinimized(false);
+              }}
+            >
+              ✕
+            </button>
+
+            <div className="info-panel-header">
+              <div className="info-panel-icon">{fullRoadmap.icon}</div>
+              <div className="info-panel-title">
+                <h3>{fullRoadmap.name}</h3>
+                <span className="status">
+                  {isNavigating ? "🚶 Navigating..." : "Active Trail"}
+                </span>
+              </div>
+            </div>
+
+            {/* Collapsible Content */}
+            {!isPanelMinimized && (
+              <div className="info-panel-body">
+                <div className="info-stats">
+                  <div className="stat-item">🕐 {fullRoadmap.duration}</div>
+                  <div className="stat-item">📏 {fullRoadmap.distance}</div>
+                  <div className="stat-item">📍 {fullRoadmap.stops.length} stops</div>
+                </div>
+
+                <p className="info-description">{fullRoadmap.description}</p>
+
+                <div className="info-stops">
+                  <h4>Route Stops</h4>
+                  {fullRoadmap.stops
+                    .sort((a, b) => a.order - b.order)
+                    .map((stop, index) => (
+                      <div 
+                        key={stop.order} 
+                        className={`stop-item ${index === activeStopIndex && isNavigating ? "active" : ""} clickable`}
+                        onClick={() => handleStopClick(stop, index)}
+                      >
+                        <span className="stop-number">{stop.order}</span>
+                        <div className="stop-details">
+                          <strong>
+                            {stop.place?.name || stop.placeSlug}
+                            {stop.isWorkshop && (
+                              <span className="workshop-badge">Workshop</span>
+                            )}
+                          </strong>
+                          <small>{stop.duration} • {stop.note}</small>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {isNavigating ? (
+                  <button className="stop-btn" onClick={handleStopNavigation}>
+                    ⏹️ Stop Navigation
+                  </button>
+                ) : (
+                  <button 
+                    className="start-btn" 
+                    onClick={handleStartNavigation}
+                    disabled={!userPosition || routeLoading}
+                  >
+                    {!userPosition ? "📍 Enable Location" : "🚀 Start Navigation"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Minimized View */}
+            {isPanelMinimized && (
+              <div className="info-panel-minimized">
+                <div className="minimized-stats">
+                  <span>🕐 {fullRoadmap.duration}</span>
+                  <span>📍 {fullRoadmap.stops.length} stops</span>
+                </div>
+                {isNavigating && (
+                  <button className="stop-btn-small" onClick={handleStopNavigation}>
+                    ⏹️ Stop
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Place Detail Modal */}
+      <PlaceDetailModal 
+        place={selectedPlace} 
+        onClose={() => setSelectedPlace(null)} 
+      />
+    </div>
+  );
+}
