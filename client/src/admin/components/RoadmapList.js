@@ -13,7 +13,37 @@ const RoadmapList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
-  const categories = ['cultural', 'craft', 'spiritual', 'food', 'adventure', 'woodcarving', 'pottery', 'heritage'];
+  // Load categories from localStorage (same as RoadmapForm)
+  const [categories, setCategories] = useState([
+    'cultural', 'craft', 'spiritual', 'food', 'adventure', 'woodcarving', 'pottery', 'heritage'
+  ]);
+
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('roadmapCategories');
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        setCategories(parsed);
+      } catch (e) {
+        console.error('Error parsing saved roadmap categories:', e);
+      }
+    }
+  }, []);
+
+  // Also refresh categories when form closes (in case new ones were added)
+  useEffect(() => {
+    if (!showForm) {
+      const savedCategories = localStorage.getItem('roadmapCategories');
+      if (savedCategories) {
+        try {
+          const parsed = JSON.parse(savedCategories);
+          setCategories(parsed);
+        } catch (e) {
+          console.error('Error parsing saved roadmap categories:', e);
+        }
+      }
+    }
+  }, [showForm]);
 
   const fetchRoadmaps = async () => {
     setLoading(true);
@@ -131,7 +161,7 @@ const RoadmapList = () => {
         <div className="loading">Loading roadmaps...</div>
       ) : (
         <>
-          <div className="table-wrapper">
+          <div className="table-container">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -178,7 +208,6 @@ const RoadmapList = () => {
                     <td>{roadmap.duration || '-'}</td>
                     <td>
                       <div className="stops-info">
-                        {/* Show validation info */}
                         {roadmap._validation?.hasIssues ? (
                           <>
                             <span className="stops-count warning">

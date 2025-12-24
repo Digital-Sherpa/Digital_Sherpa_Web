@@ -6,8 +6,15 @@ const placeSchema = new mongoose.Schema({
   description: { type: String },
   category: {
     type: String,
-    enum: ["historical", "workshop", "restaurant", "viewpoint"],
     required: true,
+    // Remove the enum restriction to allow any category
+    // Or use a more flexible approach:
+    validate: {
+      validator: function (v) {
+        return v && v.length > 0;
+      },
+      message: "Category is required",
+    },
   },
   subcategory: { type: String },
   coordinates: {
