@@ -2,11 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+require("dotenv").config({ path: "../.env" });
 
-// Load env variables - different paths for dev vs production
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config({ path: path.join(__dirname, "../.env") });
-}
+const { verifyToken, isAdmin } = require("./middleware/auth");
 
 const app = express();
 
@@ -14,40 +12,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection with better error handling
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: "digital_sherpa",
-      serverSelectionTimeoutMS: 30000, // Increase timeout
-      socketTimeoutMS: 45000,
-    });
-    console.log(`✅ Connected to MongoDB: ${conn.connection.host}`);
-  } catch (err) {
-    console.error("❌ MongoDB connection error:", err.message);
-    process.exit(1);
-  }
-};
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
-connectDB();
-
-// Public Routes
+// ============ PUBLIC ROUTES ============
+app.use("/api/auth", require("./routes/auth"));
 app.use("/api/places", require("./routes/places"));
 app.use("/api/roadmaps", require("./routes/roadmaps"));
 app.use("/api/craftsmen", require("./routes/craftsmen"));
 
-// Admin Routes
-app.use("/api/admin", require("./routes/admin"));
+// ============ PROTECTED USER ROUTES ============
+app.use("/api/users", verifyToken, require("./routes/users"));
 
-// Health check with DB status
+// ============ PROTECTED ADMIN ROUTES ============
+app.use("/api/admin", verifyToken, isAdmin, require("./routes/admin"));
+
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     message: "Digital Sherpa API is running",
-    dbState:
-      mongoose.connection.readyState === 1
-        ? "connected"
-        : "disconnected",
+    dbState: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
 

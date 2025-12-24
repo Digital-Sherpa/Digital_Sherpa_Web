@@ -2,9 +2,71 @@ import "./style.css";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 
 import { getPlaces, getRoadmaps, getRoadmapFull } from "./services/api";
+import { useAuth } from "./auth/AuthContext";
+
+// User Menu Component
+function UserMenu() {
+  const { user, isAuthenticated, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  if (!isAuthenticated) {
+    return (
+      <button 
+        className="user-menu-btn login"
+        onClick={() => navigate('/login')}
+      >
+        🔐 Login
+      </button>
+    );
+  }
+
+  return (
+    <div className="user-menu">
+      <button 
+        className="user-menu-btn"
+        onClick={() => setShowDropdown(!showDropdown)}
+      >
+        <div className="user-avatar-small">
+          {user?.avatar ? (
+            <img src={user.avatar} alt={user.name} />
+          ) : (
+            <span>{user?.name?.charAt(0).toUpperCase()}</span>
+          )}
+        </div>
+      </button>
+      
+      {showDropdown && (
+        <>
+          <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
+          <div className="user-dropdown">
+            <div className="dropdown-header">
+              <span className="dropdown-name">{user?.name}</span>
+              <span className="dropdown-email">{user?.email}</span>
+            </div>
+            <div className="dropdown-divider" />
+            <button onClick={() => { navigate('/profile'); setShowDropdown(false); }}>
+              👤 My Profile
+            </button>
+            {isAdmin && (
+              <button onClick={() => { navigate('/admin'); setShowDropdown(false); }}>
+                🛡️ Admin Panel
+              </button>
+            )}
+            <div className="dropdown-divider" />
+            <button onClick={() => { logout(); setShowDropdown(false); }} className="logout">
+              🚪 Logout
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 // Create marker icon with image from Cloudinary
 const createImageIcon = (imageUrl, color, fallbackEmoji) => {
@@ -745,6 +807,7 @@ export default function App() {
             <div className="logo-icon">🏔️</div>
             <h1>Digital Sherpa</h1>
           </div>
+          <UserMenu />
         </div>
 
         <div className="sidebar-header">
