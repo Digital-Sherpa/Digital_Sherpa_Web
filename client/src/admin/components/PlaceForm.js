@@ -5,7 +5,7 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
-    category: 'historical',  // Changed from 'type' to 'category'
+    category: 'historical',
     subcategory: '',
     coordinates: { lat: '', lng: '' },
     description: '',
@@ -32,19 +32,72 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const [tagInput, setTagInput] = useState('');
-
-  // Updated to match the Place model enum
-  const placeCategories = ['historical', 'workshop', 'restaurant', 'viewpoint'];
   
-  const subcategories = {
+  // Category management
+  const [categories, setCategories] = useState(['historical', 'workshop', 'restaurant', 'viewpoint']);
+  const [subcategories, setSubcategories] = useState({
     historical: ['temple', 'palace', 'monument', 'square'],
     workshop: ['pottery', 'woodcarving', 'metalwork', 'painting', 'weaving'],
     restaurant: ['cafe', 'traditional', 'rooftop'],
     viewpoint: ['hilltop', 'tower'],
-  };
+  });
+  
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [showNewSubcategoryInput, setShowNewSubcategoryInput] = useState(false);
+  const [newSubcategoryInput, setNewSubcategoryInput] = useState('');
+
+  // Load saved categories from localStorage on mount
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('placeCategories');
+    const savedSubcategories = localStorage.getItem('placeSubcategories');
+    
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        setCategories(parsed);
+      } catch (e) {
+        console.error('Error parsing saved categories:', e);
+      }
+    }
+    
+    if (savedSubcategories) {
+      try {
+        const parsed = JSON.parse(savedSubcategories);
+        setSubcategories(parsed);
+      } catch (e) {
+        console.error('Error parsing saved subcategories:', e);
+      }
+    }
+  }, []);
+
+  // Save categories to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('placeCategories', JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem('placeSubcategories', JSON.stringify(subcategories));
+  }, [subcategories]);
 
   useEffect(() => {
     if (place) {
+      // If place has a category not in our list, add it
+      if (place.category && !categories.includes(place.category)) {
+        setCategories(prev => [...prev, place.category]);
+      }
+      
+      // If place has a subcategory not in our list, add it
+      if (place.subcategory && place.category) {
+        const currentSubs = subcategories[place.category] || [];
+        if (!currentSubs.includes(place.subcategory)) {
+          setSubcategories(prev => ({
+            ...prev,
+            [place.category]: [...currentSubs, place.subcategory]
+          }));
+        }
+      }
+
       setFormData({
         name: place.name || '',
         slug: place.slug || '',
@@ -97,6 +150,100 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
     }
   };
 
+  // Handle category change
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+    
+    if (value === '__add_new__') {
+      setShowNewCategoryInput(true);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        category: value,
+        subcategory: '', // Reset subcategory when category changes
+      }));
+    }
+  };
+
+  // Add new category
+  const handleAddCategory = () => {
+    const trimmed = newCategoryInput.trim().toLowerCase();
+    if (trimmed && !categories.includes(trimmed)) {
+      setCategories(prev => [...prev, trimmed]);
+      setSubcategories(prev => ({ ...prev, [trimmed]: [] }));
+      setFormData(prev => ({ ...prev, category: trimmed, subcategory: '' }));
+    }
+    setNewCategoryInput('');
+    setShowNewCategoryInput(false);
+  };
+
+  // Handle subcategory change
+  const handleSubcategoryChange = (e) => {
+    const value = e.target.value;
+    
+    if (value === '__add_new__') {
+      setShowNewSubcategoryInput(true);
+    } else {
+      setFormData(prev => ({ ...prev, subcategory: value }));
+    }
+  };
+
+  // Add new subcategory
+  const handleAddSubcategory = () => {
+    const trimmed = newSubcategoryInput.trim().toLowerCase();
+    const currentCategory = formData.category;
+    const currentSubs = subcategories[currentCategory] || [];
+    
+    if (trimmed && !currentSubs.includes(trimmed)) {
+      setSubcategories(prev => ({
+        ...prev,
+        [currentCategory]: [...currentSubs, trimmed]
+      }));
+      setFormData(prev => ({ ...prev, subcategory: trimmed }));
+    }
+    setNewSubcategoryInput('');
+    setShowNewSubcategoryInput(false);
+  };
+
+  // Delete category (optional - for cleanup)
+  const handleDeleteCategory = (categoryToDelete) => {
+    if (categories.length <= 1) {
+      alert('Cannot delete the last category');
+      return;
+    }
+    
+    if (!window.confirm(`Delete category "${categoryToDelete}"? This will also delete its subcategories.`)) {
+      return;
+    }
+    
+    setCategories(prev => prev.filter(c => c !== categoryToDelete));
+    setSubcategories(prev => {
+      const newSubs = { ...prev };
+      delete newSubs[categoryToDelete];
+      return newSubs;
+    });
+    
+    // If current category was deleted, switch to first available
+    if (formData.category === categoryToDelete) {
+      const remaining = categories.filter(c => c !== categoryToDelete);
+      setFormData(prev => ({ ...prev, category: remaining[0] || 'historical', subcategory: '' }));
+    }
+  };
+
+  // Delete subcategory
+  const handleDeleteSubcategory = (subcategoryToDelete) => {
+    const currentCategory = formData.category;
+    
+    setSubcategories(prev => ({
+      ...prev,
+      [currentCategory]: (prev[currentCategory] || []).filter(s => s !== subcategoryToDelete)
+    }));
+    
+    if (formData.subcategory === subcategoryToDelete) {
+      setFormData(prev => ({ ...prev, subcategory: '' }));
+    }
+  };
+
   const handleMainImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -107,7 +254,7 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
     try {
       const result = await uploadApi.uploadSingle(file, 'places');
       setFormData(prev => ({ ...prev, imageUrl: result.url }));
-      setUploadProgress('✓ Main image uploaded!');
+      setUploadProgress('✓ Image uploaded!');
     } catch (err) {
       setUploadProgress(`✗ Error: ${err.message}`);
     } finally {
@@ -148,10 +295,9 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
 
     try {
       const result = await uploadApi.uploadSingle(file, 'videos');
-      // Videos should be objects with url, title, thumbnail
       const newVideo = {
         url: result.url,
-        title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension for title
+        title: file.name.replace(/\.[^/.]+$/, ''),
         thumbnail: formData.imageUrl || '',
       };
       setFormData(prev => ({
@@ -201,7 +347,6 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Prepare data matching the backend model
     const submitData = {
       name: formData.name,
       category: formData.category,
@@ -221,7 +366,7 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
       imageUrl: formData.imageUrl || undefined,
       gallery: formData.gallery,
       videoUrl: formData.videoUrl || undefined,
-      videos: formData.videos, // Already in correct format [{url, title, thumbnail}]
+      videos: formData.videos,
       hasWorkshop: formData.hasWorkshop,
       workshopPrice: formData.hasWorkshop ? {
         halfDay: parseFloat(formData.workshopPrice.halfDay) || undefined,
@@ -231,7 +376,6 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
       isSponsored: formData.isSponsored,
     };
 
-    // Remove undefined values
     Object.keys(submitData).forEach(key => {
       if (submitData[key] === undefined) {
         delete submitData[key];
@@ -240,6 +384,8 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
 
     onSave(submitData);
   };
+
+  const currentSubcategories = subcategories[formData.category] || [];
 
   return (
     <form onSubmit={handleSubmit} className="admin-form">
@@ -258,23 +404,130 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
           />
         </div>
 
+        {/* Category with Add New Option */}
         <div className="form-group">
           <label>Category *</label>
-          <select name="category" value={formData.category} onChange={handleChange} required>
-            {placeCategories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+          {showNewCategoryInput ? (
+            <div className="inline-add-input">
+              <input
+                type="text"
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                placeholder="New category name"
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCategory();
+                  }
+                }}
+              />
+              <button type="button" onClick={handleAddCategory} className="btn-inline-add">
+                ✓
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { setShowNewCategoryInput(false); setNewCategoryInput(''); }} 
+                className="btn-inline-cancel"
+              >
+                ✗
+              </button>
+            </div>
+          ) : (
+            <div className="select-with-action">
+              <select 
+                name="category" 
+                value={formData.category} 
+                onChange={handleCategoryChange} 
+                required
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+                <option value="__add_new__">➕ Add New Category...</option>
+              </select>
+            </div>
+          )}
+          
+          {/* Show existing categories as chips for management */}
+          <div className="category-chips-manage">
+            {categories.map(cat => (
+              <span key={cat} className={`category-chip-small ${formData.category === cat ? 'active' : ''}`}>
+                {cat}
+                {categories.length > 1 && (
+                  <button 
+                    type="button" 
+                    onClick={() => handleDeleteCategory(cat)}
+                    title="Delete category"
+                  >
+                    ×
+                  </button>
+                )}
+              </span>
             ))}
-          </select>
+          </div>
         </div>
 
+        {/* Subcategory with Add New Option */}
         <div className="form-group">
           <label>Subcategory</label>
-          <select name="subcategory" value={formData.subcategory} onChange={handleChange}>
-            <option value="">Select subcategory</option>
-            {(subcategories[formData.category] || []).map(sub => (
-              <option key={sub} value={sub}>{sub}</option>
-            ))}
-          </select>
+          {showNewSubcategoryInput ? (
+            <div className="inline-add-input">
+              <input
+                type="text"
+                value={newSubcategoryInput}
+                onChange={(e) => setNewSubcategoryInput(e.target.value)}
+                placeholder="New subcategory name"
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddSubcategory();
+                  }
+                }}
+              />
+              <button type="button" onClick={handleAddSubcategory} className="btn-inline-add">
+                ✓
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { setShowNewSubcategoryInput(false); setNewSubcategoryInput(''); }} 
+                className="btn-inline-cancel"
+              >
+                ✗
+              </button>
+            </div>
+          ) : (
+            <select 
+              name="subcategory" 
+              value={formData.subcategory} 
+              onChange={handleSubcategoryChange}
+            >
+              <option value="">Select subcategory</option>
+              {currentSubcategories.map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+              <option value="__add_new__">➕ Add New Subcategory...</option>
+            </select>
+          )}
+          
+          {/* Show existing subcategories as chips for management */}
+          {currentSubcategories.length > 0 && (
+            <div className="category-chips-manage">
+              {currentSubcategories.map(sub => (
+                <span key={sub} className={`category-chip-small ${formData.subcategory === sub ? 'active' : ''}`}>
+                  {sub}
+                  <button 
+                    type="button" 
+                    onClick={() => handleDeleteSubcategory(sub)}
+                    title="Delete subcategory"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="form-group">

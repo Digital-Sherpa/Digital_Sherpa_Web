@@ -11,7 +11,7 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
     distance: '',
     color: '#333333',
     icon: '🗺️',
-    stops: [], // Array of stop objects: {order, placeSlug, duration, note, isWorkshop}
+    stops: [],
     isActive: true,
   });
 
@@ -23,8 +23,32 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
   const [isWorkshop, setIsWorkshop] = useState(false);
 
   const difficulties = ['easy', 'moderate', 'challenging'];
-  const categories = ['cultural', 'craft', 'spiritual', 'food', 'adventure', 'woodcarving', 'pottery', 'heritage'];
-  const icons = ['🗺️', '🪵', '🏺', '🏛️', '🎨', '🍽️', '⛩️', '🚶', '🎭'];
+  const icons = ['🗺️', '🪵', '🏺', '🏛️', '🎨', '🍽️', '⛩️', '🚶', '🎭', '🏔️', '🌿', '🎪'];
+
+  // Category management
+  const [categories, setCategories] = useState([
+    'cultural', 'craft', 'spiritual', 'food', 'adventure', 'woodcarving', 'pottery', 'heritage'
+  ]);
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+
+  // Load saved categories from localStorage on mount
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('roadmapCategories');
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        setCategories(parsed);
+      } catch (e) {
+        console.error('Error parsing saved roadmap categories:', e);
+      }
+    }
+  }, []);
+
+  // Save categories to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('roadmapCategories', JSON.stringify(categories));
+  }, [categories]);
 
   useEffect(() => {
     fetchPlaces();
@@ -32,9 +56,12 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
 
   useEffect(() => {
     if (roadmap) {
-      // Convert stops to proper format if needed
+      // If roadmap has a category not in our list, add it
+      if (roadmap.category && !categories.includes(roadmap.category)) {
+        setCategories(prev => [...prev, roadmap.category]);
+      }
+
       const formattedStops = (roadmap.stops || []).map((stop, index) => {
-        // Handle both string slugs and object stops
         if (typeof stop === 'string') {
           return {
             order: index + 1,
@@ -88,10 +115,50 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
     }));
   };
 
+  // Handle category change
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+    
+    if (value === '__add_new__') {
+      setShowNewCategoryInput(true);
+    } else {
+      setFormData(prev => ({ ...prev, category: value }));
+    }
+  };
+
+  // Add new category
+  const handleAddCategory = () => {
+    const trimmed = newCategoryInput.trim().toLowerCase();
+    if (trimmed && !categories.includes(trimmed)) {
+      setCategories(prev => [...prev, trimmed]);
+      setFormData(prev => ({ ...prev, category: trimmed }));
+    }
+    setNewCategoryInput('');
+    setShowNewCategoryInput(false);
+  };
+
+  // Delete category
+  const handleDeleteCategory = (categoryToDelete) => {
+    if (categories.length <= 1) {
+      alert('Cannot delete the last category');
+      return;
+    }
+    
+    if (!window.confirm(`Delete category "${categoryToDelete}"?`)) {
+      return;
+    }
+    
+    setCategories(prev => prev.filter(c => c !== categoryToDelete));
+    
+    if (formData.category === categoryToDelete) {
+      const remaining = categories.filter(c => c !== categoryToDelete);
+      setFormData(prev => ({ ...prev, category: remaining[0] || 'cultural' }));
+    }
+  };
+
   const handleAddStop = () => {
     if (!selectedPlace) return;
 
-    // Check if already added
     if (formData.stops.some(s => s.placeSlug === selectedPlace)) {
       alert('This place is already in the roadmap');
       return;
@@ -110,7 +177,6 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
       stops: [...prev.stops, newStop],
     }));
 
-    // Reset inputs
     setSelectedPlace('');
     setStopDuration('');
     setStopNote('');
@@ -122,7 +188,7 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
       ...prev,
       stops: prev.stops
         .filter(s => s.placeSlug !== placeSlug)
-        .map((s, index) => ({ ...s, order: index + 1 })), // Re-order
+        .map((s, index) => ({ ...s, order: index + 1 })),
     }));
   };
 
@@ -134,7 +200,6 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
 
     [newStops[index], newStops[newIndex]] = [newStops[newIndex], newStops[index]];
 
-    // Update order numbers
     const reorderedStops = newStops.map((s, idx) => ({ ...s, order: idx + 1 }));
 
     setFormData(prev => ({ ...prev, stops: reorderedStops }));
@@ -168,7 +233,7 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
         note: stop.note,
         isWorkshop: stop.isWorkshop,
       })),
-      sponsoredStops: [], // Can be added later
+      sponsoredStops: [],
       tags: [],
       isActive: formData.isActive,
     };
@@ -193,13 +258,66 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
           />
         </div>
 
+        {/* Category with Add New Option */}
         <div className="form-group">
           <label>Category *</label>
-          <select name="category" value={formData.category} onChange={handleChange} required>
+          {showNewCategoryInput ? (
+            <div className="inline-add-input">
+              <input
+                type="text"
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                placeholder="New category name"
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCategory();
+                  }
+                }}
+              />
+              <button type="button" onClick={handleAddCategory} className="btn-inline-add">
+                ✓
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { setShowNewCategoryInput(false); setNewCategoryInput(''); }} 
+                className="btn-inline-cancel"
+              >
+                ✗
+              </button>
+            </div>
+          ) : (
+            <select 
+              name="category" 
+              value={formData.category} 
+              onChange={handleCategoryChange} 
+              required
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+              <option value="__add_new__">➕ Add New Category...</option>
+            </select>
+          )}
+          
+          {/* Show existing categories as chips for management */}
+          <div className="category-chips-manage">
             {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+              <span key={cat} className={`category-chip-small ${formData.category === cat ? 'active' : ''}`}>
+                {cat}
+                {categories.length > 1 && (
+                  <button 
+                    type="button" 
+                    onClick={() => handleDeleteCategory(cat)}
+                    title="Delete category"
+                  >
+                    ×
+                  </button>
+                )}
+              </span>
             ))}
-          </select>
+          </div>
         </div>
 
         <div className="form-group">
@@ -405,7 +523,6 @@ const RoadmapForm = ({ roadmap, onSave, onCancel, loading }) => {
         </button>
       </div>
     </form>
-
   );
 };
 
