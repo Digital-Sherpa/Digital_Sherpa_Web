@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { uploadApi } from '../services/adminApi';
+import { uploadApi, placesApi } from '../services/adminApi';
 
 const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
   const [formData, setFormData] = useState({
     name: '',
-    specialty: '',
+    specialty: [],
     experience: '',
     bio: '',
     contact: {
@@ -12,28 +12,46 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
       email: '',
     },
     location: '',
+    placeSlug: '',
     photo: '',
     gallery: [],
     rating: '',
     available: true,
-    workshopPrice: '',
+    workshopTypes: [],
     languages: [],
   });
 
+  const [places, setPlaces] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const [languageInput, setLanguageInput] = useState('');
+  const [specialtyInput, setSpecialtyInput] = useState('');
 
-  const specialties = [
-    'Pottery', 'Woodcarving', 'Metalwork', 'Thangka Painting',
-    'Weaving', 'Mask Making', 'Stone Carving', 'Jewelry', 'Other'
-  ];
+  const [newWorkshop, setNewWorkshop] = useState({
+    type: '',
+    duration: '',
+    price: '',
+    description: ''
+  });
+
+  useEffect(() => {
+    fetchPlaces();
+  }, []);
+
+  const fetchPlaces = async () => {
+    try {
+      const data = await placesApi.getAll();
+      setPlaces(data.places || []);
+    } catch (error) {
+      console.error('Error fetching places:', error);
+    }
+  };
 
   useEffect(() => {
     if (craftsman) {
       setFormData({
         name: craftsman.name || '',
-        specialty: craftsman.specialty || '',
+        specialty: Array.isArray(craftsman.specialty) ? craftsman.specialty : (craftsman.specialty ? [craftsman.specialty] : []),
         experience: craftsman.experience || '',
         bio: craftsman.bio || '',
         contact: {
@@ -41,11 +59,12 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
           email: craftsman.contact?.email || '',
         },
         location: craftsman.location || '',
+        placeSlug: craftsman.placeSlug || '',
         photo: craftsman.photo || '',
         gallery: craftsman.gallery || [],
         rating: craftsman.rating || '',
         available: craftsman.available !== false,
-        workshopPrice: craftsman.workshopPrice || '',
+        workshopTypes: craftsman.workshopTypes || [],
         languages: craftsman.languages || [],
       });
     }
@@ -120,20 +139,44 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
     }));
   };
 
-  const handleAddLanguage = () => {
-    if (languageInput.trim() && !formData.languages.includes(languageInput.trim())) {
+  // Tag Handling (Languages & Specialties)
+  const handleAddTag = (field, value, setter) => {
+    if (value.trim() && !formData[field].includes(value.trim())) {
       setFormData(prev => ({
         ...prev,
-        languages: [...prev.languages, languageInput.trim()],
+        [field]: [...prev[field], value.trim()],
       }));
-      setLanguageInput('');
+      setter('');
     }
   };
 
-  const removeLanguage = (lang) => {
+  const removeTag = (field, tag) => {
     setFormData(prev => ({
       ...prev,
-      languages: prev.languages.filter(l => l !== lang),
+      [field]: prev[field].filter(t => t !== tag),
+    }));
+  };
+
+  // Workshop Types Management
+  const handleWorkshopChange = (e) => {
+    const { name, value } = e.target;
+    setNewWorkshop(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addWorkshop = () => {
+    if (newWorkshop.type && newWorkshop.price) {
+      setFormData(prev => ({
+        ...prev,
+        workshopTypes: [...prev.workshopTypes, { ...newWorkshop, price: parseFloat(newWorkshop.price) }]
+      }));
+      setNewWorkshop({ type: '', duration: '', price: '', description: '' });
+    }
+  };
+
+  const removeWorkshop = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      workshopTypes: prev.workshopTypes.filter((_, i) => i !== index)
     }));
   };
 
@@ -144,7 +187,6 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
       ...formData,
       experience: formData.experience ? parseInt(formData.experience) : undefined,
       rating: formData.rating ? parseFloat(formData.rating) : undefined,
-      workshopPrice: formData.workshopPrice ? parseFloat(formData.workshopPrice) : undefined,
     };
 
     onSave(submitData);
@@ -168,16 +210,6 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
         </div>
 
         <div className="form-group">
-          <label>Specialty *</label>
-          <select name="specialty" value={formData.specialty} onChange={handleChange} required>
-            <option value="">Select Specialty</option>
-            {specialties.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
           <label>Years of Experience</label>
           <input
             type="number"
@@ -190,7 +222,7 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
         </div>
 
         <div className="form-group">
-          <label>Location</label>
+          <label>Location (Address)</label>
           <input
             type="text"
             name="location"
@@ -198,6 +230,17 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
             onChange={handleChange}
             placeholder="e.g., Pottery Square, Bhaktapur"
           />
+        </div>
+
+        {/* Place Link */}
+        <div className="form-group">
+          <label>Linked Place</label>
+          <select name="placeSlug" value={formData.placeSlug} onChange={handleChange}>
+            <option value="">Select a Place (Optional)</option>
+            {places.map(place => (
+              <option key={place._id} value={place.slug}>{place.name}</option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">
@@ -236,15 +279,16 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
           />
         </div>
 
-        <div className="form-group">
-          <label>Workshop Price (Rs.)</label>
-          <input
-            type="number"
-            name="workshopPrice"
-            value={formData.workshopPrice}
-            onChange={handleChange}
-            placeholder="e.g., 500"
-          />
+        <div className="form-group checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              name="available"
+              checked={formData.available}
+              onChange={handleChange}
+            />
+            Available for bookings
+          </label>
         </div>
       </div>
 
@@ -259,16 +303,65 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
         />
       </div>
 
-      <div className="form-group checkbox-group">
-        <label>
+      {/* Specialties */}
+      <div className="form-section">
+        <h3>Specialties</h3>
+        <div className="tag-input-group">
           <input
-            type="checkbox"
-            name="available"
-            checked={formData.available}
-            onChange={handleChange}
+            type="text"
+            value={specialtyInput}
+            onChange={(e) => setSpecialtyInput(e.target.value)}
+            placeholder="Add specialty (e.g. Pottery, Woodwork)..."
+            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag('specialty', specialtyInput, setSpecialtyInput))}
           />
-          Available for bookings
-        </label>
+          <button type="button" onClick={() => handleAddTag('specialty', specialtyInput, setSpecialtyInput)} className="btn-secondary">Add</button>
+        </div>
+        <div className="tags-list">
+          {formData.specialty.map(spec => (
+            <span key={spec} className="tag">
+              {spec}
+              <button type="button" onClick={() => removeTag('specialty', spec)}>×</button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Workshop Types */}
+      <div className="form-section">
+        <h3>Workshop Types</h3>
+        <div className="workshop-form-row">
+          <input
+            type="text"
+            name="type"
+            value={newWorkshop.type}
+            onChange={handleWorkshopChange}
+            placeholder="Type (e.g. Half Day)"
+          />
+          <input
+            type="text"
+            name="duration"
+            value={newWorkshop.duration}
+            onChange={handleWorkshopChange}
+            placeholder="Duration (e.g. 3-4 hours)"
+          />
+          <input
+            type="number"
+            name="price"
+            value={newWorkshop.price}
+            onChange={handleWorkshopChange}
+            placeholder="Price (Rs.)"
+          />
+          <button type="button" onClick={addWorkshop} className="btn-secondary">Add Workshop</button>
+        </div>
+        <div className="workshop-list">
+          {formData.workshopTypes.map((ws, idx) => (
+            <div key={idx} className="workshop-item">
+              <span><strong>{ws.type}</strong> - {ws.duration} - Rs. {ws.price}</span>
+              <button type="button" onClick={() => removeWorkshop(idx)} className="btn-icon text-red">✕</button>
+            </div>
+          ))}
+          {formData.workshopTypes.length === 0 && <p className="text-muted">No workshops added yet.</p>}
+        </div>
       </div>
 
       {/* Profile Photo */}
@@ -334,15 +427,15 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
             value={languageInput}
             onChange={(e) => setLanguageInput(e.target.value)}
             placeholder="Add language..."
-            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLanguage())}
+            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag('languages', languageInput, setLanguageInput))}
           />
-          <button type="button" onClick={handleAddLanguage} className="btn-secondary">Add</button>
+          <button type="button" onClick={() => handleAddTag('languages', languageInput, setLanguageInput)} className="btn-secondary">Add</button>
         </div>
         <div className="tags-list">
           {formData.languages.map(lang => (
             <span key={lang} className="tag">
               {lang}
-              <button type="button" onClick={() => removeLanguage(lang)}>×</button>
+              <button type="button" onClick={() => removeTag('languages', lang)}>×</button>
             </span>
           ))}
         </div>

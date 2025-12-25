@@ -8,6 +8,7 @@ const Sidebar = ({ activeSection, onSectionChange, user, onLogout }) => {
     { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
     { id: 'places', icon: '📍', label: 'Places' },
     { id: 'craftsmen', icon: '👨‍🎨', label: 'Craftsmen' },
+    { id: 'bookings', icon: '📅', label: 'Bookings' },
     { id: 'roadmaps', icon: '🗺️', label: 'Roadmaps' },
     { id: 'events', icon: '🎉', label: 'Events' },
     { id: 'users', icon: '👥', label: 'Users' },

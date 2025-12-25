@@ -8,6 +8,7 @@ import L from "leaflet";
 import { getPlaces, getRoadmaps, getRoadmapFull, getFeaturedEvents } from "./services/api";
 import { useAuth } from "./auth/AuthContext";
 import RecordingPanel from "./components/RecordingPanel";
+import BookingModal from "./components/BookingModal";
 
 // User Menu Component
 function UserMenu() {
@@ -376,6 +377,7 @@ function PlacePopup({ place, stopNumber, isSponsored, onMoreDetails }) {
 // Place Detail Modal with Video Support - Improved
 function PlaceDetailModal({ place, onClose }) {
   const [activeTab, setActiveTab] = useState('info');
+  const [showBookingModal, setShowBookingModal] = useState(false);
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -514,7 +516,12 @@ function PlaceDetailModal({ place, onClose }) {
                       )}
                     </div>
                   )}
-                  <button className="book-workshop-btn">Book Workshop</button>
+                  <button 
+                    className="book-workshop-btn"
+                    onClick={() => setShowBookingModal(true)}
+                  >
+                    Book Workshop
+                  </button>
                 </div>
               )}
 
@@ -602,6 +609,13 @@ function PlaceDetailModal({ place, onClose }) {
           )}
         </div>
       </div>
+      
+      {showBookingModal && (
+        <BookingModal 
+          place={place} 
+          onClose={() => setShowBookingModal(false)}
+        />
+      )}
     </div>
   );
 }
