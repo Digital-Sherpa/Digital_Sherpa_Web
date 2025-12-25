@@ -1,0 +1,416 @@
+[
+    {
+  "_id": {
+    "$oid": "69483d19617ef6f11a2e8c11"
+  },
+  "name": "Bhaktapur Durbar Square",
+  "slug": "bhaktapur-durbar-square",
+  "description": "UNESCO World Heritage Site featuring stunning Newari architecture, ancient temples, and the famous 55-window palace. This historic square showcases the rich cultural heritage of the Malla dynasty.",
+  "category": "historical",
+  "coordinates": {
+    "lat": 27.672108,
+    "lng": 85.42834
+  },
+  "imageUrl": "https://res.cloudinary.com/dwuym30x9/image/upload/v1766149091/bhkt_h3dqpg.jpg",
+  "gallery": [
+    "https://res.cloudinary.com/dwuym30x9/image/upload/v1752942450/digital_sherpa/durbar-square.jpg"
+  ],
+  "videoUrl": "https://res.cloudinary.com/dwuym30x9/video/upload/v1766334795/2_hkkoka.mp4",
+  "videos": [
+    {
+      "url": "https://res.cloudinary.com/dwuym30x9/video/upload/v1766334795/2_hkkoka.mp4",
+      "title": "Durbar Square Walking Tour",
+      "thumbnail": "https://res.cloudinary.com/dwuym30x9/image/upload/v1752942450/digital_sherpa/durbar-square.jpg",
+      "_id": {
+        "$oid": "69483d19617ef6f11a2e8c12"
+      }
+    }
+  ],
+  "address": "Durbar Square, Bhaktapur",
+  "openingHours": "6:00 AM - 6:00 PM",
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 500,
+    "foreign": 1500
+  },
+  "tags": [
+    "heritage",
+    "temple",
+    "architecture",
+    "UNESCO"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-21T18:31:53.898Z"
+  },
+  "__v": 0
+},
+
+
+{
+  "_id": {
+    "$oid": "69487194bcb33bdda5f3ff6d"
+  },
+  "name": "Khwopa Engineering College (Khec)",
+  "slug": "khwopa-engineering-college-khec",
+  "description": "Khwopa Engineering College (KhEC), an undertaking of Bhaktapur Municipality, is Nepal's first community-based engineering college. KhEC was established in 2001 A.D. (2058 B.S.) in affiliation with the highly esteemed Purbanchal University, Nepal.\n\nKhEC was initiated with the vision of establishing Bhaktapur as the center of excellence thereby intellectualizing the entire society through engineering knowledge.",
+  "category": "college",
+  "subcategory": "square",
+  "coordinates": {
+    "lat": 27.67096,
+    "lng": 85.43999
+  },
+  "imageUrl": "https://res.cloudinary.com/dwuym30x9/image/upload/v1766355106/digital_sherpa/1766355103515-khec.jpg",
+  "gallery": [
+    "https://res.cloudinary.com/dwuym30x9/image/upload/v1766355128/digital_sherpa/1766355127254-khce.jpg",
+    "https://res.cloudinary.com/dwuym30x9/image/upload/v1766355170/digital_sherpa/1766355162459-image00003.jpg"
+  ],
+  "videos": [
+    {
+      "url": "https://res.cloudinary.com/dwuym30x9/video/upload/v1766355323/digital_sherpa/videos/1766355200273-20250507_073127.mp4",
+      "title": "20250507_073127",
+      "thumbnail": "https://res.cloudinary.com/dwuym30x9/image/upload/v1766355106/digital_sherpa/1766355103515-khec.jpg",
+      "_id": {
+        "$oid": "69487194bcb33bdda5f3ff6e"
+      }
+    }
+  ],
+  "address": "libali - 08, Bhaktapur",
+  "openingHours": "7 AM - 5 PM",
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [
+    "khwopa",
+    "bhaktapur"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": true,
+  "createdAt": {
+    "$date": "2025-12-21T22:15:48.210Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c088969e52145648b6eb4"
+  },
+  "name": "Kathmandu University School of Engineering ( KU )",
+  "slug": "kathmandu-university-school-of-engineering-ku",
+  "description": "Kathmandu University (KU) (Nepali: काठमाण्डौ विश्वविद्यालय) is an autonomous university in Nepal. It is the third oldest university in Nepal, located in Dhulikhel of Kavrepalanchok District",
+  "category": "university",
+  "coordinates": {
+    "lat": 27.6196,
+    "lng": 85.5386
+  },
+  "gallery": [
+    "https://res.cloudinary.com/dwuym30x9/image/upload/v1766591171/digital_sherpa/1766591169908-Kathmandu_University_Nepal.jpg"
+  ],
+  "videoUrl": "https://www.youtube.com/watch?v=_VQPFQMhl3s",
+  "videos": [],
+  "address": "Dhulikhel, Nepal",
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [
+    "university",
+    "ku"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T15:36:41.953Z"
+  },
+  "__v": 1,
+  "imageUrl": "https://res.cloudinary.com/dwuym30x9/image/upload/v1766591062/digital_sherpa/1766591060689-Kathmandu_University_Nepal.jpg"
+},
+
+{
+  "_id": {
+    "$oid": "694c48887cf23bc1be9fdc00"
+  },
+  "name": "Durbar Square Gate",
+  "slug": "durbar-square-gate",
+  "description": "Registration desk for foreign tourists to enter the durbar square. \n",
+  "category": "entry point",
+  "coordinates": {
+    "lat": 27.673464,
+    "lng": 85.438329
+  },
+  "gallery": [],
+  "videos": [],
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 500,
+    "foreign": 2000
+  },
+  "tags": [
+    "registration/entry point"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:09:44.242Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c496c7cf23bc1be9fdc09"
+  },
+  "name": "Dhwakasi Ganesh Mandir",
+  "slug": "dhwakasi-ganesh-mandir",
+  "description": "A hindu temple worshipped by the locals.",
+  "category": "historical",
+  "subcategory": "temple",
+  "coordinates": {
+    "lat": 27.673464,
+    "lng": 85.438329
+  },
+  "gallery": [],
+  "videos": [],
+  "address": "Near Bhaktapur Durbar Square Gate",
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:13:32.712Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c4a787cf23bc1be9fdc13"
+  },
+  "name": "Dhungey Dhara",
+  "slug": "dhungey-dhara",
+  "description": "A stone taps used by the people as a water source.",
+  "category": "local",
+  "coordinates": {
+    "lat": 27.673464,
+    "lng": 85.438329
+  },
+  "gallery": [],
+  "videos": [],
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [
+    "local"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:18:00.258Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c4bc67cf23bc1be9fdc1c"
+  },
+  "name": "Suryamari Buddha Stupa",
+  "slug": "suryamari-buddha-stupa",
+  "description": "A local buddha stupa worshiped by local buddhist community people. ",
+  "category": "religious",
+  "coordinates": {
+    "lat": 27.6733267,
+    "lng": 85.4374548
+  },
+  "gallery": [],
+  "videos": [],
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [
+    "stupa"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:23:34.829Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c4c8f7cf23bc1be9fdc24"
+  },
+  "name": "Local pottery business",
+  "slug": "local-pottery-business",
+  "description": "A local pottery business that produces clay diyas.",
+  "category": "workshop",
+  "subcategory": "pottery",
+  "coordinates": {
+    "lat": 27.6731153,
+    "lng": 85.4375129
+  },
+  "gallery": [],
+  "videos": [],
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:26:55.192Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c4c8f7cf23bc1be9fdc24"
+  },
+  "name": "Local pottery business",
+  "slug": "local-pottery-business",
+  "description": "A local pottery business that produces clay diyas.",
+  "category": "workshop",
+  "subcategory": "pottery",
+  "coordinates": {
+    "lat": 27.6731153,
+    "lng": 85.4375129
+  },
+  "gallery": [],
+  "videos": [],
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:26:55.192Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c4f0f7cf23bc1be9fdc2d"
+  },
+  "name": "Shree Adipadam Monastery",
+  "slug": "shree-adipadam-monastery",
+  "description": "One of the oldest Gumba in the Bhaktapur Area, estd in 1970 B.S (1913 A.D), a place to worship primarily for Buddhist people.",
+  "category": "historical",
+  "coordinates": {
+    "lat": 27.6729584,
+    "lng": 85.437533
+  },
+  "gallery": [],
+  "videos": [],
+  "address": "Bhaktapur",
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [
+    "gumba",
+    "religious",
+    "historical"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:37:35.726Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c51437cf23bc1be9fdc35"
+  },
+  "name": "Wakupati Narayan Temple",
+  "slug": "wakupati-narayan-temple",
+  "description": "A religious temple dedicated to Lord Vishnu believed to be built around 1667 A.D.The ornate, golden mandir survived the 2015 earthquake despite some damage to neighboring buildings; Note the entourage of Five Garuda supported on pillars on the backs of turtles courtyard. This is the only location where four Garuda can be seen in this manner.",
+  "category": "religious",
+  "subcategory": "woodcarvings",
+  "coordinates": {
+    "lat": 27.6734075,
+    "lng": 85.4371217
+  },
+  "gallery": [],
+  "videos": [],
+  "address": "Suryamadi, Bhaktapur",
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "tags": [
+    "religious",
+    "historicals",
+    "wooden carvings",
+    "unique"
+  ],
+  "hasWorkshop": false,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T20:46:59.582Z"
+  },
+  "__v": 0
+},
+
+{
+  "_id": {
+    "$oid": "694c5dd29e408d26603e9d75"
+  },
+  "name": "Gagan Tara Handicraft - Wheat straw art and Training center",
+  "slug": "gagan-tara-handicraft-wheat-straw-art-and-training-center",
+  "description": "A unique for of handmade art made from wheat straws, bending innovation and innovation. Wheat art also known as “Chhawali Art” in Nepali, made from the natural color of wheat straws using their natural color and light properties ",
+  "category": "workshop",
+  "subcategory": "wheatstraw art",
+  "coordinates": {
+    "lat": 27.6735825,
+    "lng": 85.4367528
+  },
+  "gallery": [],
+  "videos": [],
+  "address": "Suryamadi-9, Bhaktapur",
+  "entryFee": {
+    "nepali": 0,
+    "saarc": 0,
+    "foreign": 0
+  },
+  "workshopPrice": {
+    "fullDay": 15000
+  },
+  "tags": [
+    "unique",
+    "srt",
+    "authentic"
+  ],
+  "hasWorkshop": true,
+  "isSponsored": false,
+  "createdAt": {
+    "$date": "2025-12-24T21:40:34.983Z"
+  },
+  "__v": 0
+}
+]

@@ -1,0 +1,200 @@
+[
+    {
+        "id": "69483d19617ef6f11a2e8c11",
+        "name": "Bhaktapur Durbar Square",
+        "slug": "bhaktapur-durbar-square",
+        "description": "UNESCO World Heritage Site featuring stunning Newari architecture, ancient temples, and the famous 55-window palace. This historic square showcases the rich cultural heritage of the Malla dynasty.",
+        "category": "historical",
+        "subcategory": "",
+        "address": "Durbar Square, Bhaktapur",
+        "tags": [
+            "heritage",
+            "temple",
+            "architecture",
+            "UNESCO"
+        ],
+        "coordinates": {
+            "lat": 27.672108,
+            "lng": 85.42834
+        }
+    },
+    {
+        "id": "69487194bcb33bdda5f3ff6d",
+        "name": "Khwopa Engineering College (Khec)",
+        "slug": "khwopa-engineering-college-khec",
+        "description": "Khwopa Engineering College (KhEC), an undertaking of Bhaktapur Municipality, is Nepal's first community-based engineering college. KhEC was established in 2001 A.D. (2058 B.S.) in affiliation with the highly esteemed Purbanchal University, Nepal.\n\nKhEC was initiated with the vision of establishing Bhaktapur as the center of excellence thereby intellectualizing the entire society through engineering knowledge.",
+        "category": "college",
+        "subcategory": "square",
+        "address": "libali - 08, Bhaktapur",
+        "tags": [
+            "khwopa",
+            "bhaktapur"
+        ],
+        "coordinates": {
+            "lat": 27.67096,
+            "lng": 85.43999
+        }
+    },
+    {
+        "id": "694c088969e52145648b6eb4",
+        "name": "Kathmandu University School of Engineering ( KU )",
+        "slug": "kathmandu-university-school-of-engineering-ku",
+        "description": "Kathmandu University (KU) (Nepali: \u0915\u093e\u0920\u092e\u093e\u0923\u094d\u0921\u094c \u0935\u093f\u0936\u094d\u0935\u0935\u093f\u0926\u094d\u092f\u093e\u0932\u092f) is an autonomous university in Nepal. It is the third oldest university in Nepal, located in Dhulikhel of Kavrepalanchok District",
+        "category": "university",
+        "subcategory": "",
+        "address": "Dhulikhel, Nepal",
+        "tags": [
+            "university",
+            "ku"
+        ],
+        "coordinates": {
+            "lat": 27.6196,
+            "lng": 85.5386
+        }
+    },
+    {
+        "id": "694c48887cf23bc1be9fdc00",
+        "name": "Durbar Square Gate",
+        "slug": "durbar-square-gate",
+        "description": "Registration desk for foreign tourists to enter the durbar square. \n",
+        "category": "entry point",
+        "subcategory": "",
+        "address": "",
+        "tags": [
+            "registration/entry point"
+        ],
+        "coordinates": {
+            "lat": 27.673464,
+            "lng": 85.438329
+        }
+    },
+    {
+        "id": "694c496c7cf23bc1be9fdc09",
+        "name": "Dhwakasi Ganesh Mandir",
+        "slug": "dhwakasi-ganesh-mandir",
+        "description": "A hindu temple worshipped by the locals.",
+        "category": "historical",
+        "subcategory": "temple",
+        "address": "Near Bhaktapur Durbar Square Gate",
+        "tags": [],
+        "coordinates": {
+            "lat": 27.673464,
+            "lng": 85.438329
+        }
+    },
+    {
+        "id": "694c4a787cf23bc1be9fdc13",
+        "name": "Dhungey Dhara",
+        "slug": "dhungey-dhara",
+        "description": "A stone taps used by the people as a water source.",
+        "category": "local",
+        "subcategory": "",
+        "address": "",
+        "tags": [
+            "local"
+        ],
+        "coordinates": {
+            "lat": 27.673464,
+            "lng": 85.438329
+        }
+    },
+    {
+        "id": "694c4bc67cf23bc1be9fdc1c",
+        "name": "Suryamari Buddha Stupa",
+        "slug": "suryamari-buddha-stupa",
+        "description": "A local buddha stupa worshiped by local buddhist community people. ",
+        "category": "religious",
+        "subcategory": "",
+        "address": "",
+        "tags": [
+            "stupa"
+        ],
+        "coordinates": {
+            "lat": 27.6733267,
+            "lng": 85.4374548
+        }
+    },
+    {
+        "id": "694c4c8f7cf23bc1be9fdc24",
+        "name": "Local pottery business",
+        "slug": "local-pottery-business",
+        "description": "A local pottery business that produces clay diyas.",
+        "category": "workshop",
+        "subcategory": "pottery",
+        "address": "",
+        "tags": [],
+        "coordinates": {
+            "lat": 27.6731153,
+            "lng": 85.4375129
+        }
+    },
+    {
+        "id": "694c4c8f7cf23bc1be9fdc24",
+        "name": "Local pottery business",
+        "slug": "local-pottery-business",
+        "description": "A local pottery business that produces clay diyas.",
+        "category": "workshop",
+        "subcategory": "pottery",
+        "address": "",
+        "tags": [],
+        "coordinates": {
+            "lat": 27.6731153,
+            "lng": 85.4375129
+        }
+    },
+    {
+        "id": "694c4f0f7cf23bc1be9fdc2d",
+        "name": "Shree Adipadam Monastery",
+        "slug": "shree-adipadam-monastery",
+        "description": "One of the oldest Gumba in the Bhaktapur Area, estd in 1970 B.S (1913 A.D), a place to worship primarily for Buddhist people.",
+        "category": "historical",
+        "subcategory": "",
+        "address": "Bhaktapur",
+        "tags": [
+            "gumba",
+            "religious",
+            "historical"
+        ],
+        "coordinates": {
+            "lat": 27.6729584,
+            "lng": 85.437533
+        }
+    },
+    {
+        "id": "694c51437cf23bc1be9fdc35",
+        "name": "Wakupati Narayan Temple",
+        "slug": "wakupati-narayan-temple",
+        "description": "A religious temple dedicated to Lord Vishnu believed to be built around 1667 A.D.The ornate, golden mandir survived the 2015 earthquake despite some damage to neighboring buildings; Note the entourage of Five Garuda supported on pillars on the backs of turtles courtyard. This is the only location where four Garuda can be seen in this manner.",
+        "category": "religious",
+        "subcategory": "woodcarvings",
+        "address": "Suryamadi, Bhaktapur",
+        "tags": [
+            "religious",
+            "historicals",
+            "wooden carvings",
+            "unique"
+        ],
+        "coordinates": {
+            "lat": 27.6734075,
+            "lng": 85.4371217
+        }
+    },
+    {
+        "id": "694c5dd29e408d26603e9d75",
+        "name": "Gagan Tara Handicraft - Wheat straw art and Training center",
+        "slug": "gagan-tara-handicraft-wheat-straw-art-and-training-center",
+        "description": "A unique for of handmade art made from wheat straws, bending innovation and innovation. Wheat art also known as \u201cChhawali Art\u201d in Nepali, made from the natural color of wheat straws using their natural color and light properties ",
+        "category": "workshop",
+        "subcategory": "wheatstraw art",
+        "address": "Suryamadi-9, Bhaktapur",
+        "tags": [
+            "unique",
+            "srt",
+            "authentic"
+        ],
+        "coordinates": {
+            "lat": 27.6735825,
+            "lng": 85.4367528
+        }
+    }
+]

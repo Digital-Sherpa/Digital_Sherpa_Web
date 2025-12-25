@@ -1,0 +1,74 @@
+{
+    "0": {
+        "place_id": "69483d19617ef6f11a2e8c11",
+        "lat": 27.672108,
+        "lon": 85.42834,
+        "category": "historical"
+    },
+    "1": {
+        "place_id": "69487194bcb33bdda5f3ff6d",
+        "lat": 27.67096,
+        "lon": 85.43999,
+        "category": "college"
+    },
+    "2": {
+        "place_id": "694c088969e52145648b6eb4",
+        "lat": 27.6196,
+        "lon": 85.5386,
+        "category": "university"
+    },
+    "3": {
+        "place_id": "694c48887cf23bc1be9fdc00",
+        "lat": 27.673464,
+        "lon": 85.438329,
+        "category": "entry point"
+    },
+    "4": {
+        "place_id": "694c496c7cf23bc1be9fdc09",
+        "lat": 27.673464,
+        "lon": 85.438329,
+        "category": "historical"
+    },
+    "5": {
+        "place_id": "694c4a787cf23bc1be9fdc13",
+        "lat": 27.673464,
+        "lon": 85.438329,
+        "category": "local"
+    },
+    "6": {
+        "place_id": "694c4bc67cf23bc1be9fdc1c",
+        "lat": 27.6733267,
+        "lon": 85.4374548,
+        "category": "religious"
+    },
+    "7": {
+        "place_id": "694c4c8f7cf23bc1be9fdc24",
+        "lat": 27.6731153,
+        "lon": 85.4375129,
+        "category": "workshop"
+    },
+    "8": {
+        "place_id": "694c4c8f7cf23bc1be9fdc24",
+        "lat": 27.6731153,
+        "lon": 85.4375129,
+        "category": "workshop"
+    },
+    "9": {
+        "place_id": "694c4f0f7cf23bc1be9fdc2d",
+        "lat": 27.6729584,
+        "lon": 85.437533,
+        "category": "historical"
+    },
+    "10": {
+        "place_id": "694c51437cf23bc1be9fdc35",
+        "lat": 27.6734075,
+        "lon": 85.4371217,
+        "category": "religious"
+    },
+    "11": {
+        "place_id": "694c5dd29e408d26603e9d75",
+        "lat": 27.6735825,
+        "lon": 85.4367528,
+        "category": "workshop"
+    }
+}
