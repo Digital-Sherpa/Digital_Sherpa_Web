@@ -106,6 +106,8 @@ export async function checkSearchHealth() {
   } catch (error) {
     return { status: 'unhealthy', connected: false, error: error.message };
   }
+}
+
 // Bookings (requires authentication)
 export async function createBooking(bookingData, token) {
   const response = await fetch(`${API_BASE}/bookings`, {
