@@ -1,4 +1,4 @@
-const cloudinary = require('../config/cloudinary');
+const { cloudinary } = require('../config/cloudinary');
 // Mock Canvas for Windows environments where installation is difficult
 const generateAndUpload = async (coordinates, stats, roadmapName) => {
   console.log('Mocking track image generation for:', roadmapName);
@@ -12,6 +12,25 @@ const generateAndUpload = async (coordinates, stats, roadmapName) => {
   };
 };
 
+const uploadTrackImage = async (base64Image, metadata = {}) => {
+  try {
+    const result = await cloudinary.uploader.upload(base64Image, {
+      folder: 'journey',
+      resource_type: 'image',
+      context: metadata,
+    });
+
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+      format: result.format,
+    };
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    throw error;
+  }
+};
+
 const generateForDownload = async (coordinates, stats, roadmapName, options = {}) => {
   console.log('Mocking track image download for:', roadmapName);
   // Return a simple buffer (e.g., a 1x1 pixel)
@@ -21,5 +40,6 @@ const generateForDownload = async (coordinates, stats, roadmapName, options = {}
 
 module.exports = {
   generateAndUpload,
+  uploadTrackImage,
   generateForDownload,
 };

@@ -1198,14 +1198,14 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.6); /* Slightly more transparent to see map */
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end; /* Align to RIGHT */
   z-index: 2000;
-  padding: 1rem;
+  padding: 1rem 2rem 1rem 1rem; /* Add padding, more on right */
   animation: fadeIn 0.2s ease;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
 }
 
 @keyframes fadeIn {
@@ -1216,13 +1216,100 @@ body {
 .modal-content {
   background: #1e2432;
   border-radius: 1rem;
-  max-width: 500px;
+  max-width: 480px; /* Optimal width for side panel */
   width: 100%;
-  max-height: 90vh;
+  max-height: 95vh; /* Taller */
+  height: auto;
   overflow-y: auto;
   position: relative;
-  animation: modalSlideUp 0.3s ease;
+  animation: modalSlideInRight 0.3s ease; /* New animation */
   border: 1px solid #2a3142;
+  box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+  margin-right: 0; /* Align closely to right padding */
+}
+
+@keyframes modalSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Improved Gallery Styles */
+.gallery-grid-improved {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.gallery-item-large {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #3a4252;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gallery-item-large:hover {
+  transform: scale(1.03);
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 2;
+}
+
+.gallery-item-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Improved Video Styles */
+.video-player-container {
+  margin-top: 1rem;
+  background: #000;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #3a4252;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.video-title {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  background: #2a3142;
+  font-size: 0.9rem;
+  color: #fff;
+  border-bottom: 1px solid #3a4252;
+}
+
+.video-player {
+  width: 100%;
+  display: block;
+  max-height: 300px;
+}
+
+.youtube-embed-wrapper {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.iframe-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 @keyframes modalSlideUp {

@@ -231,6 +231,42 @@ const RecordingPanel = ({
         await syncCoordinates();
       }
 
+      // Capture map image
+      let trackImageBase64 = null;
+      if (mapInstance && coordinates.length > 0) {
+        // Fit bounds to show whole path
+        const bounds = coordinates.map(c => [c.lat, c.lng]);
+        mapInstance.fitBounds(bounds, { padding: [50, 50] });
+        
+        // Wait for map to settle and tiles to load
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        try {
+          console.log('Starting map capture...');
+          // Import html2canvas dynamically
+          const html2canvas = (await import('html2canvas')).default;
+          const mapContainer = document.querySelector('.leaflet-container');
+          
+          if (mapContainer) {
+            const canvas = await html2canvas(mapContainer, {
+              useCORS: true,       // Try to load images with CORS
+              allowTaint: false,   // MUST be false to use toDataURL
+              logging: true,       // Enable logging for debugging
+              ignoreElements: (element) => {
+                return element.classList.contains('leaflet-control-container') ||
+                       element.classList.contains('recording-panel');
+              }
+            });
+            trackImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            console.log('Map captured successfully, base64 length:', trackImageBase64.length);
+          } else {
+            console.error('Map container not found');
+          }
+        } catch (imgErr) {
+          console.error('Failed to capture map image:', imgErr);
+        }
+      }
+
       const token = getToken();
       const response = await fetch(`/api/journeys/${journeyId}/stop`, {
         method: 'PUT',
@@ -238,7 +274,9 @@ const RecordingPanel = ({
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          trackImage: trackImageBase64
+        }),
       });
 
       const data = await response.json();
