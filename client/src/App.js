@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 
-import { getPlaces, getRoadmaps, getRoadmapFull, getFeaturedEvents } from "./services/api";
+import { getPlaces, getRoadmaps, getRoadmapFull, getFeaturedEvents, semanticSearch } from "./services/api";
 import { useAuth } from "./auth/AuthContext";
 import RecordingPanel from "./components/RecordingPanel";
 
@@ -616,6 +616,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [mapInstance, setMapInstance] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -663,6 +666,30 @@ export default function App() {
     }
     fetchData();
   }, []);
+
+  // Debounced Semantic Search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        setShowSearchResults(true);
+        try {
+          const results = await semanticSearch(searchQuery, 8, true);
+          setSearchResults(results);
+        } catch (error) {
+          console.error("Search error:", error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   // Get user location (no auto-centering)
   useEffect(() => {
@@ -966,15 +993,105 @@ const formatDateRange = (startDate, endDate) => {
             
             {isTrailsExpanded && (
               <div className="section-content">
-                {/* Search */}
-                <div className="search-box">
-                  <span className="search-icon">🔍</span>
-                  <input
-                    type="text"
-                    placeholder="Search trails..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+                {/* Semantic Search */}
+                <div className="search-box-container">
+                  <div className="search-box">
+                    <span className="search-icon">{isSearching ? '⏳' : '🔍'}</span>
+                    <input
+                      type="text"
+                      placeholder="Search places, temples, trails..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
+                    />
+                    {searchQuery && (
+                      <button 
+                        className="search-clear-btn"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSearchResults([]);
+                          setShowSearchResults(false);
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Search Results Dropdown */}
+                  {showSearchResults && searchResults.length > 0 && (
+                    <div className="search-results-dropdown">
+                      <div className="search-results-header">
+                        <span>🎯 Found {searchResults.length} places</span>
+                        <button onClick={() => setShowSearchResults(false)}>✕</button>
+                      </div>
+                      <div className="search-results-list">
+                        {searchResults.map((result, index) => {
+                          const placeDetails = result.full_details || {};
+                          const placeName = placeDetails.name || result.place_id;
+                          const placeCategory = placeDetails.category || result.category;
+                          const placeImage = placeDetails.imageUrl;
+                          
+                          return (
+                            <div 
+                              key={result.place_id || index}
+                              className="search-result-item"
+                              onClick={() => {
+                                // Find matching place and zoom to it
+                                const matchedPlace = places.find(p => 
+                                  p._id === result.place_id || 
+                                  p.slug === placeDetails.slug
+                                );
+                                if (matchedPlace && mapInstance) {
+                                  mapInstance.flyTo(
+                                    [matchedPlace.coordinates.lat, matchedPlace.coordinates.lng], 
+                                    18, 
+                                    { duration: 1 }
+                                  );
+                                  // Open popup after flying
+                                  setTimeout(() => {
+                                    openPopupForPlace(matchedPlace.slug);
+                                  }, 1100);
+                                }
+                                setShowSearchResults(false);
+                                setSelectedPlace(matchedPlace || { ...placeDetails, _id: result.place_id });
+                              }}
+                            >
+                              <div className="search-result-avatar">
+                                {placeImage ? (
+                                  <img src={placeImage} alt={placeName} />
+                                ) : (
+                                  <span>{categoryEmojis[placeCategory] || '📍'}</span>
+                                )}
+                              </div>
+                              <div className="search-result-info">
+                                <h4>{placeName}</h4>
+                                <span className="search-result-id">ID: {result.place_id}</span>
+                                <div className="search-result-meta">
+                                  <span className="search-result-category">
+                                    {categoryEmojis[placeCategory] || '📍'} {placeCategory || 'Place'}
+                                  </span>
+                                  <span className="search-result-score">
+                                    {Math.round(result.score * 100)}% match
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* No Results State */}
+                  {showSearchResults && !isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                    <div className="search-results-dropdown">
+                      <div className="search-no-results">
+                        <span>🔍</span>
+                        <p>No places found for "{searchQuery}"</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Filters */}

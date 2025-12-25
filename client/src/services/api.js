@@ -62,3 +62,48 @@ export async function getEventBySlug(slug) {
   if (!response.ok) throw new Error("Event not found");
   return response.json();
 }
+
+// Semantic Search - connects to the searchEngine API
+const SEARCH_API_BASE = process.env.REACT_APP_SEARCH_API_URL || "http://localhost:8000";
+
+export async function semanticSearch(query, topK = 10, includeDetails = true) {
+  const response = await fetch(`${SEARCH_API_BASE}/search/detailed`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: query,
+      top_k: topK,
+      include_details: includeDetails
+    }),
+  });
+  if (!response.ok) throw new Error("Search failed");
+  return response.json();
+}
+
+export async function basicSearch(query, topK = 10) {
+  const response = await fetch(`${SEARCH_API_BASE}/search`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: query,
+      top_k: topK
+    }),
+  });
+  if (!response.ok) throw new Error("Search failed");
+  return response.json();
+}
+
+// Search health check
+export async function checkSearchHealth() {
+  try {
+    const response = await fetch(`${SEARCH_API_BASE}/health`);
+    if (!response.ok) return { status: 'unhealthy', connected: false };
+    return response.json();
+  } catch (error) {
+    return { status: 'unhealthy', connected: false, error: error.message };
+  }
+}
