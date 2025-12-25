@@ -12,7 +12,7 @@ Since your Search Engine is a Python application (FastAPI) and your main Backend
     *   **Name:** `digital-sherpa-search` (or similar)
     *   **Root Directory:** `searchEngine` (Available under "Advanced" or basic settings)
     *   **Runtime:** `Python 3`
-    *   **Build Command:** `pip install -r requirements.txt`
+    *   **Build Command:** `pip install -U pip setuptools wheel && pip install -r requirements.txt`
     *   **Start Command:** `python main.py`
 6.  **Environment Variables** (Add these in the "Environment" tab):
     *   `MONGODB_URI`: (Copy the same connection string you use for your main backend)
