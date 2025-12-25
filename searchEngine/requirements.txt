@@ -1,6 +1,26 @@
-fastapi
-uvicorn
-pydantic
-faiss-cpu
-numpy
-sentence-transformers
+# DigitalSherpa Search Engine Dependencies
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Data Validation
+pydantic>=2.0.0
+
+# Vector Search
+faiss-cpu>=1.7.4
+
+# Embeddings
+sentence-transformers>=2.2.0
+numpy>=1.24.0
+
+# MongoDB
+pymongo>=4.6.0
+motor>=3.3.0  # Async MongoDB driver (optional, for future async support)
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# For development
+pytest>=7.0.0
+httpx>=0.25.0  # For testing FastAPI
