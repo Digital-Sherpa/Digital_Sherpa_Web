@@ -22,11 +22,18 @@ const BookingModal = ({ place, craftsman, onClose, onSuccess }) => {
       return selected?.price || 0;
     }
     if (place?.workshopPrice) {
-      return formData.workshopType === 'halfDay' 
-        ? place.workshopPrice.halfDay || 0
-        : place.workshopPrice.fullDay || 0;
+      if (formData.workshopType === 'halfDay') return place.workshopPrice.halfDay || 0;
+      if (formData.workshopType === 'fullDay') return place.workshopPrice.fullDay || 0;
     }
     return 0;
+  };
+
+  const getDuration = () => {
+    if (craftsman && craftsman.workshopTypes?.length > 0) {
+      const selected = craftsman.workshopTypes.find(w => w.type === formData.workshopType);
+      return selected?.duration || 'Flexible';
+    }
+    return formData.workshopType === 'halfDay' ? '3-4 hours' : 'Full Day';
   };
 
   const getTotalPrice = () => {
@@ -40,6 +47,15 @@ const BookingModal = ({ place, craftsman, onClose, onSuccess }) => {
       [name]: name === 'numberOfPeople' ? parseInt(value) || 1 : value,
     }));
   };
+
+  // Set initial workshop type when modal opens
+  React.useEffect(() => {
+    if (craftsman && craftsman.workshopTypes?.length > 0) {
+      setFormData(prev => ({ ...prev, workshopType: craftsman.workshopTypes[0].type }));
+    } else {
+      setFormData(prev => ({ ...prev, workshopType: 'halfDay' }));
+    }
+  }, [craftsman]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,9 +76,9 @@ const BookingModal = ({ place, craftsman, onClose, onSuccess }) => {
         placeName: place?.name,
         craftsmanId: craftsman?._id,
         craftsmanName: craftsman?.name,
-        workshopType: formData.workshopType === 'halfDay' ? 'Half Day' : 'Full Day',
+        workshopType: formData.workshopType === 'halfDay' ? 'Half Day' : (formData.workshopType === 'fullDay' ? 'Full Day' : formData.workshopType),
         bookingDate: formData.bookingDate,
-        duration: formData.workshopType === 'halfDay' ? '3-4 hours' : 'Full Day',
+        duration: getDuration(),
         numberOfPeople: formData.numberOfPeople,
         totalPrice: getTotalPrice(),
         notes: formData.notes,
@@ -145,8 +161,18 @@ const BookingModal = ({ place, craftsman, onClose, onSuccess }) => {
               onChange={handleChange}
               required
             >
-              <option value="halfDay">Half Day (3-4 hours) - Rs. {place?.workshopPrice?.halfDay || 0}</option>
-              <option value="fullDay">Full Day - Rs. {place?.workshopPrice?.fullDay || 0}</option>
+              {craftsman && craftsman.workshopTypes?.length > 0 ? (
+                craftsman.workshopTypes.map((type, idx) => (
+                  <option key={idx} value={type.type}>
+                    {type.type} ({type.duration}) - Rs. {type.price}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="halfDay">Half Day (3-4 hours) - Rs. {place?.workshopPrice?.halfDay || 0}</option>
+                  <option value="fullDay">Full Day - Rs. {place?.workshopPrice?.fullDay || 0}</option>
+                </>
+              )}
             </select>
           </div>
 

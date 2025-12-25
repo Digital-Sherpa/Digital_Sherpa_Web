@@ -40,7 +40,7 @@ const CraftsmanForm = ({ craftsman, onSave, onCancel, loading }) => {
 
   const fetchPlaces = async () => {
     try {
-      const data = await placesApi.getAll();
+      const data = await placesApi.getAll({ limit: 1000 });
       setPlaces(data.places || []);
     } catch (error) {
       console.error('Error fetching places:', error);
