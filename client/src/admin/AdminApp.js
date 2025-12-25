@@ -8,6 +8,7 @@ import CraftsmanList from './components/CraftsmanList';
 import RoadmapList from './components/RoadmapList';
 import EventList from './components/EventList';
 import UserManagement from './components/UserManagement';
+import BookingList from './components/BookingList';
 import './admin.css';
 
 const AdminApp = () => {
@@ -19,7 +20,7 @@ const AdminApp = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['dashboard', 'places', 'craftsmen', 'roadmaps', 'events', 'users'].includes(hash)) {
+      if (hash && ['dashboard', 'places', 'craftsmen', 'roadmaps', 'events', 'users', 'bookings'].includes(hash)) {
         setActiveSection(hash);
       }
     };
@@ -53,6 +54,8 @@ const AdminApp = () => {
         return <EventList />;
       case 'users':
         return <UserManagement />;
+      case 'bookings':
+        return <BookingList />;
       default:
         return <Dashboard />;
     }

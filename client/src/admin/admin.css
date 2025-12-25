@@ -533,6 +533,31 @@
   border: 1px solid rgba(156, 163, 175, 0.3);
 }
 
+/* Booking Statuses */
+.status-badge.pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.confirmed {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.completed {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-badge.cancelled {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
 .badge.featured {
   background: rgba(251, 191, 36, 0.2);
   color: #fbbf24;
@@ -1673,4 +1698,56 @@ select option[value="__add_new__"] {
   .category-chips-manage {
     margin-top: 0.75rem;
   }
+}
+
+/* Workshop Form Layout */
+.workshop-form-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: var(--admin-surface);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  flex-wrap: wrap;
+}
+
+.workshop-form-row input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.workshop-form-row button {
+  white-space: nowrap;
+  height: 42px; /* Match input height roughly */
+  display: flex;
+  align-items: center;
+}
+
+.workshop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.workshop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+}
+
+.workshop-item span {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.workshop-item strong {
+  color: var(--admin-primary);
 }

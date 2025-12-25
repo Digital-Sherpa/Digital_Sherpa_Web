@@ -106,4 +106,45 @@ export async function checkSearchHealth() {
   } catch (error) {
     return { status: 'unhealthy', connected: false, error: error.message };
   }
+// Bookings (requires authentication)
+export async function createBooking(bookingData, token) {
+  const response = await fetch(`${API_BASE}/bookings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(bookingData),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to create booking");
+  }
+  return response.json();
+}
+
+export async function getMyBookings(token) {
+  const response = await fetch(`${API_BASE}/bookings/my-bookings`, {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) throw new Error("Failed to fetch bookings");
+  return response.json();
+}
+
+export async function cancelBooking(bookingId, token, reason = "") {
+  const response = await fetch(`${API_BASE}/bookings/${bookingId}/cancel`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ reason }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to cancel booking");
+  }
+  return data;
 }

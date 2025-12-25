@@ -8,6 +8,9 @@ import L from "leaflet";
 import { getPlaces, getRoadmaps, getRoadmapFull, getFeaturedEvents, semanticSearch } from "./services/api";
 import { useAuth } from "./auth/AuthContext";
 import RecordingPanel from "./components/RecordingPanel";
+import BookingModal from "./components/BookingModal";
+import CraftsmanListModal from "./components/CraftsmanListModal";
+import CraftsmanDetailModal from "./components/CraftsmanDetailModal";
 
 // User Menu Component
 function UserMenu() {
@@ -376,6 +379,7 @@ function PlacePopup({ place, stopNumber, isSponsored, onMoreDetails }) {
 // Place Detail Modal with Video Support - Improved
 function PlaceDetailModal({ place, onClose }) {
   const [activeTab, setActiveTab] = useState('info');
+  const [showBookingModal, setShowBookingModal] = useState(false);
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -514,7 +518,12 @@ function PlaceDetailModal({ place, onClose }) {
                       )}
                     </div>
                   )}
-                  <button className="book-workshop-btn">Book Workshop</button>
+                  <button 
+                    className="book-workshop-btn"
+                    onClick={() => setShowBookingModal(true)}
+                  >
+                    Book Workshop
+                  </button>
                 </div>
               )}
 
@@ -602,6 +611,13 @@ function PlaceDetailModal({ place, onClose }) {
           )}
         </div>
       </div>
+      
+      {showBookingModal && (
+        <BookingModal 
+          place={place} 
+          onClose={() => setShowBookingModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -629,6 +645,10 @@ export default function App() {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [activeStopIndex, setActiveStopIndex] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showCraftsmanList, setShowCraftsmanList] = useState(false);
+  const [selectedCraftsman, setSelectedCraftsman] = useState(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+
   
   // Collapsible sections state
   const [isTrailsExpanded, setIsTrailsExpanded] = useState(true);
@@ -867,6 +887,37 @@ export default function App() {
         openPopupForPlace(stop.placeSlug);
       }, 600);
     }
+  };
+
+  // Handle simple navigation to a point
+  const handleNavigateToLocation = async (targetCoords) => {
+    if (!userPosition) {
+      alert("Please enable location services to use navigation.");
+      return;
+    }
+
+    setRouteLoading(true);
+    // Determine start point (User Position) and End Point
+    const start = userPosition;
+    const end = targetCoords;
+
+    const route = await getWalkingRoute(start, end);
+
+    if (route) {
+      setNavigationRoute(route);
+      setIsNavigating(true);
+      
+      // Fit bounds to show route
+      if (mapInstance) {
+        const bounds = L.latLngBounds([start, end]);
+        mapInstance.fitBounds(bounds, { padding: [100, 100], maxZoom: 17 });
+      }
+    } else {
+      // Fallback if no route found (straight line)
+      setNavigationRoute([start, end]);
+      setIsNavigating(true);
+    }
+    setRouteLoading(false);
   };
 
 // Enhanced event click handler - highlights ALL event locations on map
@@ -1196,7 +1247,12 @@ const formatDateRange = (startDate, endDate) => {
                           key={evt._id} 
                           className={`event-card ${isSelected ? 'selected' : ''} ${status}`}
                           onClick={() => handleEventClick(evt)}
-                          style={{ '--event-color': evt.color || '#FF6B35' }}
+                          style={{ 
+                            '--event-color': evt.color || '#FF6B35',
+                            backgroundImage: evt.imageUrl ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url(${evt.imageUrl})` : undefined,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
                         >
                           {/* Gradient Accent */}
                           <div className="event-card-accent" />
@@ -1388,6 +1444,36 @@ const formatDateRange = (startDate, endDate) => {
             </div>
             <div className="panel-body">
               <p className="panel-description">{selectedEvent.description}</p>
+              
+              {/* Add Stop Navigation button here if navigating */}
+              {isNavigating && (
+                <button 
+                  className="stop-navigation-btn"
+                  onClick={() => {
+                    setIsNavigating(false);
+                    setNavigationRoute([]);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    marginBottom: '1rem',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                  }}
+                >
+                  ⏹️ Stop Navigation
+                </button>
+              )}
+
               <div className="panel-locations">
                 <h4>📍 Event Locations ({selectedEvent.locations?.length || 0})</h4>
                 <ul className="locations-list">
@@ -1396,8 +1482,8 @@ const formatDateRange = (startDate, endDate) => {
                       key={idx}
                       className="location-item"
                       onClick={() => {
-                        if (loc?.coordinates && mapInstance) {
-                          mapInstance.flyTo([loc.coordinates.lat, loc.coordinates.lng], 18, { duration: 0.5 });
+                        if (loc?.coordinates) {
+                          handleNavigateToLocation([loc.coordinates.lat, loc.coordinates.lng]);
                         }
                       }}
                     >
@@ -1406,6 +1492,8 @@ const formatDateRange = (startDate, endDate) => {
                         <strong>{loc.name || 'Location ' + (idx + 1)}</strong>
                         {loc.address && <small>{loc.address}</small>}
                       </div>
+                      {/* Indicates that clicking will navigate */}
+                      <span className="navigate-icon" style={{ marginLeft: 'auto', opacity: 0.7 }}>🚶➡</span>
                     </li>
                   ))}
                 </ul>
@@ -1413,6 +1501,18 @@ const formatDateRange = (startDate, endDate) => {
             </div>
           </div>
         )}
+
+        {/* Map Overlay Controls */}
+        <div className="map-overlay-controls">
+          <button 
+            className="overlay-btn"
+            onClick={() => setShowCraftsmanList(true)}
+            title="Find Artisans"
+          >
+            <span className="overlay-icon">👨‍🎨</span>
+            <span className="overlay-label">Find Artisans</span>
+          </button>
+        </div>
 
         {/* Map Controls */}
         <div className="map-controls">
@@ -1535,6 +1635,41 @@ const formatDateRange = (startDate, endDate) => {
         place={selectedPlace} 
         onClose={() => setSelectedPlace(null)} 
       />
+
+      {/* Connection Modals */}
+      {showCraftsmanList && (
+        <CraftsmanListModal 
+          onClose={() => setShowCraftsmanList(false)}
+          onSelectCraftsman={(craftsman) => {
+            setSelectedCraftsman(craftsman);
+            setShowCraftsmanList(false);
+          }}
+        />
+      )}
+
+      {selectedCraftsman && (
+        <CraftsmanDetailModal 
+          craftsman={selectedCraftsman}
+          onClose={() => setSelectedCraftsman(null)}
+          onBook={(c) => {
+            setSelectedPlace(null); 
+            setShowBookingModal(true);
+          }}
+        />
+      )}
+
+      {/* Booking Modal (Shared) */}
+      {showBookingModal && (
+        <BookingModal 
+          place={selectedPlace} 
+          craftsman={selectedCraftsman} 
+          onClose={() => {
+            setShowBookingModal(false);
+            // Optional: Re-open craftsman detail if cancelled? 
+            // For now, simple close entire flow is cleaner.
+          }} 
+        />
+      )}
 
       {/* Journey Recording Panel */}
       <RecordingPanel

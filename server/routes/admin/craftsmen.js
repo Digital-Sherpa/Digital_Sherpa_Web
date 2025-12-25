@@ -14,8 +14,8 @@ router.get("/", async (req, res) => {
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
+        { bio: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
       ];
     }
     if (specialty) {
@@ -59,12 +59,14 @@ router.post("/", async (req, res) => {
   try {
     const {
       name,
-      title,
-      description,
-      imageUrl,
+      photo,
+      bio,
+      gallery,
       specialty,
       placeSlug,
       experience,
+      location,
+      contact,
       languages,
       workshopTypes,
       rating,
@@ -82,12 +84,14 @@ router.post("/", async (req, res) => {
     const craftsman = new Craftsman({
       name,
       slug,
-      title,
-      description,
-      imageUrl,
+      photo,
+      bio,
+      gallery: gallery || [],
       specialty: specialty || [],
       placeSlug,
       experience,
+      location,
+      contact: contact || {},
       languages: languages || [],
       workshopTypes: workshopTypes || [],
       rating: rating || 0,
@@ -112,12 +116,14 @@ router.put("/:id", async (req, res) => {
 
     const {
       name,
-      title,
-      description,
-      imageUrl,
+      photo,
+      bio,
+      gallery,
       specialty,
       placeSlug,
       experience,
+      location,
+      contact,
       languages,
       workshopTypes,
       rating,
@@ -135,12 +141,14 @@ router.put("/:id", async (req, res) => {
     }
 
     if (name !== undefined) craftsman.name = name;
-    if (title !== undefined) craftsman.title = title;
-    if (description !== undefined) craftsman.description = description;
-    if (imageUrl !== undefined) craftsman.imageUrl = imageUrl;
+    if (photo !== undefined) craftsman.photo = photo;
+    if (bio !== undefined) craftsman.bio = bio;
+    if (gallery !== undefined) craftsman.gallery = gallery;
     if (specialty !== undefined) craftsman.specialty = specialty;
     if (placeSlug !== undefined) craftsman.placeSlug = placeSlug;
     if (experience !== undefined) craftsman.experience = experience;
+    if (location !== undefined) craftsman.location = location;
+    if (contact !== undefined) craftsman.contact = contact;
     if (languages !== undefined) craftsman.languages = languages;
     if (workshopTypes !== undefined) craftsman.workshopTypes = workshopTypes;
     if (rating !== undefined) craftsman.rating = rating;
@@ -162,9 +170,9 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ message: "Craftsman not found" });
     }
 
-    if (req.query.deleteMedia === "true" && craftsman.imageUrl) {
+    if (req.query.deleteMedia === "true" && craftsman.photo) {
       try {
-        const publicId = getPublicIdFromUrl(craftsman.imageUrl);
+        const publicId = getPublicIdFromUrl(craftsman.photo);
         if (publicId) await deleteFromCloudinary(publicId);
       } catch (e) {
         console.error("Failed to delete image:", e);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { getMyBookings, cancelBooking } from '../services/api';
 import './profile.css';
 
 const ProfilePage = () => {
@@ -13,6 +14,7 @@ const ProfilePage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [stats, setStats] = useState(null);
   const [journeys, setJourneys] = useState([]);
+  const [bookings, setBookings] = useState([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -41,6 +43,7 @@ const ProfilePage = () => {
       });
       fetchStats();
       fetchJourneys();
+      fetchBookings();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -72,6 +75,29 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error fetching journeys:', error);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const token = getToken();
+      const data = await getMyBookings(token);
+      setBookings(data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+    
+    try {
+      const token = getToken();
+      await cancelBooking(bookingId, token);
+      setMessage({ type: 'success', text: 'Booking cancelled successfully' });
+      fetchBookings(); // Refresh list
+    } catch (error) {
+      setMessage({ type: 'error', text: error.message });
     }
   };
 
@@ -261,6 +287,12 @@ const ProfilePage = () => {
               📝 Profile
             </button>
             <button 
+              className={`tab ${activeTab === 'bookings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('bookings')}
+            >
+              📅 Bookings
+            </button>
+            <button 
               className={`tab ${activeTab === 'journeys' ? 'active' : ''}`}
               onClick={() => setActiveTab('journeys')}
             >
@@ -399,6 +431,98 @@ const ProfilePage = () => {
                   </button>
                 )}
               </form>
+            </div>
+          )}
+
+          {/* Bookings Tab */}
+          {activeTab === 'bookings' && (
+            <div className="tab-content">
+              <h3>📅 My Bookings</h3>
+              {bookings.length > 0 ? (
+                <div className="bookings-list">
+                  {bookings.map((booking) => {
+                    const bookingDate = new Date(booking.bookingDate);
+                    const today = new Date();
+                    const isUpcoming = bookingDate > today;
+                    const diffTime = bookingDate - today;
+                    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    // Logic: Can cancel if more than 7 days left
+                    const canCancel = booking.status !== 'cancelled' && booking.status !== 'completed' && daysLeft > 7;
+
+                    return (
+                      <div key={booking._id} className={`booking-card ${booking.status} ${!canCancel && isUpcoming ? 'locked' : ''}`}>
+                        <div className="booking-header">
+                          <div className="booking-title">
+                            <h4>{booking.craftsmanName || booking.placeName}</h4>
+                            <span className="booking-type">{booking.workshopType}</span>
+                          </div>
+                          <span className={`booking-status ${booking.status}`}>
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </span>
+                        </div>
+                        
+                        <div className="booking-details">
+                          <div className="booking-info-row">
+                            <span>📅 Date:</span>
+                            <span>{bookingDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                          </div>
+                          <div className="booking-info-row">
+                            <span>👥 People:</span>
+                            <span>{booking.numberOfPeople}</span>
+                          </div>
+                          <div className="booking-info-row">
+                            <span>💰 Total Price:</span>
+                            <span>Rs. {booking.totalPrice}</span>
+                          </div>
+                          {booking.notes && (
+                            <div className="booking-notes">
+                              <strong>Note:</strong> {booking.notes}
+                            </div>
+                          )}
+                        </div>
+
+                        {booking.status === 'cancelled' && booking.cancellationReason && (
+                          <div className="cancellation-reason">
+                            Cancelled: {booking.cancellationReason}
+                          </div>
+                        )}
+
+                        {booking.status === 'confirmed' && isUpcoming && (
+                          <div className="booking-actions">
+                            {canCancel ? (
+                              <div className="cancellation-available">
+                                <span className="text-green-small">✓ Free cancellation available ({daysLeft} days until event)</span>
+                                <button 
+                                  className="cancel-booking-btn"
+                                  onClick={() => handleCancelBooking(booking._id)}
+                                >
+                                  Cancel Booking
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="cancellation-locked">
+                                <p className="cancel-note warning">
+                                  ⚠️ Cancellation unavailable (Event is in {daysLeft} days).
+                                  <br/>Policy requires 7 days notice.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <span className="empty-icon">🎫</span>
+                  <p>No bookings yet. Explore workshops to book!</p>
+                  <button className="explore-btn" onClick={() => navigate('/')}>
+                    Explore Map →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

@@ -235,6 +235,22 @@ export const eventsApi = {
   }),
 };
 
+// === BOOKINGS ===
+export const bookingsApi = {
+  getAll: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return fetchAPI(`/bookings?${query}`);
+  },
+  getById: (id) => fetchAPI(`/bookings/${id}`),
+  updateStatus: (id, status, reason) => fetchAPI(`/bookings/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, reason }),
+  }),
+  delete: (id) => fetchAPI(`/bookings/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
 export default {
   places: placesApi,
   craftsmen: craftsmenApi,
@@ -243,4 +259,5 @@ export default {
   stats: statsApi,
   users: usersApi,
   events: eventsApi,
+  bookings: bookingsApi,
 };
