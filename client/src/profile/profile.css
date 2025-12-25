@@ -769,3 +769,150 @@
     gap: 1rem;
   }
 }
+
+/* ==================== */
+/* JOURNEYS TAB STYLES */
+/* ==================== */
+
+/* Journey Stats */
+.journey-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.journey-stat {
+  background: #0f1419;
+  border: 1px solid #3a4253;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+/* Journeys Grid */
+.journeys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+/* Journey Card */
+.journey-card {
+  background: #0f1419;
+  border: 1px solid #3a4253;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.journey-card:hover {
+  transform: translateY(-4px);
+  border-color: #10b981;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+}
+
+/* Journey Image */
+.journey-image {
+  width: 100%;
+  height: 160px;
+  background: #1a1f2e;
+  overflow: hidden;
+}
+
+.journey-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.journey-card:hover .journey-image img {
+  transform: scale(1.05);
+}
+
+.journey-image.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: #4a5568;
+}
+
+/* Journey Info */
+.journey-info {
+  padding: 1rem;
+}
+
+.journey-info h4 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.journey-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.journey-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.journey-roadmap {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: #10b981;
+  margin-top: 0.5rem;
+}
+
+/* Journey Actions */
+.journey-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid #3a4253;
+}
+
+.journey-actions .download-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #10b981;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.journey-actions .download-btn:hover {
+  background: #10b981;
+  color: white;
+}
+
+/* Responsive Journeys */
+@media (max-width: 768px) {
+  .journey-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .journeys-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

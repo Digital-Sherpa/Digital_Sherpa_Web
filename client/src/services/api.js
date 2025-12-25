@@ -41,3 +41,24 @@ export async function getCraftsmanBySlug(slug) {
   if (!response.ok) throw new Error("Craftsman not found");
   return response.json();
 }
+
+// Events
+export async function getEvents(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const url = query ? `${API_BASE}/events?${query}` : `${API_BASE}/events`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Failed to fetch events");
+  return response.json();
+}
+
+export async function getFeaturedEvents() {
+  const response = await fetch(`${API_BASE}/events/featured`);
+  if (!response.ok) throw new Error("Failed to fetch featured events");
+  return response.json();
+}
+
+export async function getEventBySlug(slug) {
+  const response = await fetch(`${API_BASE}/events/${slug}`);
+  if (!response.ok) throw new Error("Event not found");
+  return response.json();
+}

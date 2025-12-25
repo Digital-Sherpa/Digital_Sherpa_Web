@@ -215,6 +215,26 @@ export const usersApi = {
   getStats: () => fetchAPI('/users/stats/overview'),
 };
 
+// === EVENTS ===
+export const eventsApi = {
+  getAll: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return fetchAPI(`/events?${query}`);
+  },
+  getById: (id) => fetchAPI(`/events/${id}`),
+  create: (data) => fetchAPI('/events', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => fetchAPI(`/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => fetchAPI(`/events/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
 export default {
   places: placesApi,
   craftsmen: craftsmenApi,
@@ -222,4 +242,5 @@ export default {
   upload: uploadApi,
   stats: statsApi,
   users: usersApi,
+  events: eventsApi,
 };

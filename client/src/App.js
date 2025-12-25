@@ -5,8 +5,9 @@ import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 
-import { getPlaces, getRoadmaps, getRoadmapFull } from "./services/api";
+import { getPlaces, getRoadmaps, getRoadmapFull, getFeaturedEvents } from "./services/api";
 import { useAuth } from "./auth/AuthContext";
+import RecordingPanel from "./components/RecordingPanel";
 
 // User Menu Component
 function UserMenu() {
@@ -24,6 +25,8 @@ function UserMenu() {
       </button>
     );
   }
+
+  
 
   return (
     <div className="user-menu">
@@ -571,6 +574,7 @@ function PlaceDetailModal({ place, onClose }) {
 export default function App() {
   const [places, setPlaces] = useState([]);
   const [roadmaps, setRoadmaps] = useState([]);
+  const [featuredEvents, setFeaturedEvents] = useState([]);
   const [selectedRoadmap, setSelectedRoadmap] = useState(null);
   const [fullRoadmap, setFullRoadmap] = useState(null);
   const [userPosition, setUserPosition] = useState(null);
@@ -586,6 +590,19 @@ export default function App() {
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [activeStopIndex, setActiveStopIndex] = useState(0);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  
+  // Collapsible sections state
+  const [isTrailsExpanded, setIsTrailsExpanded] = useState(true);
+  const [isEventsExpanded, setIsEventsExpanded] = useState(true);
+  
+  // Mobile sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Recording state for live route display
+  const [recordingData, setRecordingData] = useState(null);
+  
+  const navigate = useNavigate();
   
   // Refs for markers to control popups
   const markerRefs = useRef({});
@@ -594,15 +611,18 @@ export default function App() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [placesData, roadmapsData] = await Promise.all([
+        setLoading(true);
+        const [placesData, roadmapsData, eventsData] = await Promise.all([
           getPlaces(),
           getRoadmaps(),
+          getFeaturedEvents().catch(() => []), // Don't fail if events API fails
         ]);
         setPlaces(placesData);
         setRoadmaps(roadmapsData);
-        setLoading(false);
+        setFeaturedEvents(eventsData);
       } catch (err) {
         setError(err.message);
+      } finally {
         setLoading(false);
       }
     }
@@ -787,6 +807,68 @@ export default function App() {
     }
   };
 
+// Enhanced event click handler - highlights ALL event locations on map
+function handleEventClick(evt) {
+  if (!evt.locations || evt.locations.length === 0) return;
+  
+  setSelectedEvent(evt);
+  setIsSidebarOpen(false); // Close mobile sidebar
+  
+  // Fit map to show ALL event locations
+  if (mapInstance && evt.locations.length > 0) {
+    const allCoords = evt.locations
+      .filter(loc => loc?.coordinates)
+      .map(loc => [loc.coordinates.lat, loc.coordinates.lng]);
+    
+    if (allCoords.length === 1) {
+      mapInstance.flyTo(allCoords[0], 17, { duration: 1 });
+    } else if (allCoords.length > 1) {
+      const bounds = L.latLngBounds(allCoords);
+      mapInstance.fitBounds(bounds, { padding: [80, 80], maxZoom: 16, duration: 1 });
+    }
+  }
+}
+
+function handleViewAllEvents() {
+  setSelectedEvent(null);
+  if (mapInstance && featuredEvents.length > 0) {
+    const allCoords = featuredEvents.flatMap(evt => 
+      evt.locations?.filter(loc => loc?.coordinates).map(loc => [loc.coordinates.lat, loc.coordinates.lng]) || []
+    );
+    if (allCoords.length > 0) {
+      const bounds = L.latLngBounds(allCoords);
+      mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+  }
+}
+
+// Helper to format event date
+const formatEventDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// Get event status based on dates
+const getEventStatus = (startDate, endDate) => {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : start;
+  
+  if (now < start) return 'upcoming';
+  if (now > end) return 'past';
+  return 'ongoing';
+};
+
+// Format date range for display
+const formatDateRange = (startDate, endDate) => {
+  const start = formatEventDate(startDate);
+  const end = endDate ? formatEventDate(endDate) : null;
+  
+  if (!end || start === end) return start;
+  return `${start} - ${end}`;
+};
+
   if (loading) {
     return (
       <div className="loading-overlay">
@@ -800,9 +882,31 @@ export default function App() {
     <div className="app-container">
       {error && <div className="error-toast">{error}</div>}
 
+      {/* Mobile Menu Toggle */}
+      <button 
+        className="mobile-menu-toggle"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        aria-label="Toggle menu"
+      >
+        <span className={`hamburger ${isSidebarOpen ? 'open' : ''}`}>
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
+
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+        {/* Header */}
+        <div className="sidebar-header main-header">
           <div className="logo">
             <div className="logo-icon">🏔️</div>
             <h1>Digital Sherpa</h1>
@@ -810,88 +914,186 @@ export default function App() {
           <UserMenu />
         </div>
 
-        <div className="sidebar-header">
-          <h2>🗺️ Explore Trails</h2>
-
-          {/* Search */}
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="Search trails..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Filters */}
-          <div className="filter-row">
-            <button
-              className={`filter-btn ${activeFilter === "all" ? "active" : ""}`}
-              onClick={() => setActiveFilter("all")}
+        {/* Scrollable Content */}
+        <div className="sidebar-content">
+          {/* Explore Trails Section - Collapsible */}
+          <div className="sidebar-section">
+            <button 
+              className="section-toggle"
+              onClick={() => setIsTrailsExpanded(!isTrailsExpanded)}
             >
-              All
-            </button>
-            <button
-              className={`filter-btn ${activeFilter === "woodcarving" ? "active" : ""}`}
-              onClick={() => setActiveFilter("woodcarving")}
-            >
-              🪵 Wood
-            </button>
-            <button
-              className={`filter-btn ${activeFilter === "pottery" ? "active" : ""}`}
-              onClick={() => setActiveFilter("pottery")}
-            >
-              🏺 Pottery
-            </button>
-            <button
-              className={`filter-btn ${activeFilter === "heritage" ? "active" : ""}`}
-              onClick={() => setActiveFilter("heritage")}
-            >
-              🏛️ Heritage
-            </button>
-          </div>
-        </div>
-
-        {/* Trail List */}
-        <div className="list-container">
-          {filteredRoadmaps.map((roadmap) => (
-            <div
-              key={roadmap._id}
-              className={`trail-card ${selectedRoadmap?.slug === roadmap.slug ? "active" : ""}`}
-              onClick={() => {
-                setSelectedRoadmap(roadmap);
-                setIsNavigating(false);
-                setNavigationRoute([]);
-                setIsPanelMinimized(false);
-              }}
-            >
-              <div className="trail-icon" style={{ borderColor: roadmap.color }}>
-                {roadmap.icon}
+              <div className="section-toggle-left">
+                <span className="section-icon">🗺️</span>
+                <span className="section-title">Explore Trails</span>
               </div>
-              <div className="trail-info">
-                <h4>{roadmap.name}</h4>
-                <div className="trail-meta">
-                  <span>🕐 {roadmap.duration}</span>
-                  <span>📏 {roadmap.distance}</span>
+              <span className={`section-chevron ${isTrailsExpanded ? 'expanded' : ''}`}>▼</span>
+            </button>
+            
+            {isTrailsExpanded && (
+              <div className="section-content">
+                {/* Search */}
+                <div className="search-box">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Search trails..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Filters */}
+                <div className="filter-row">
+                  <button
+                    className={`filter-btn ${activeFilter === "all" ? "active" : ""}`}
+                    onClick={() => setActiveFilter("all")}
+                  >
+                    All
+                  </button>
+                  <button
+                    className={`filter-btn ${activeFilter === "woodcarving" ? "active" : ""}`}
+                    onClick={() => setActiveFilter("woodcarving")}
+                  >
+                    🪵 Wood
+                  </button>
+                  <button
+                    className={`filter-btn ${activeFilter === "pottery" ? "active" : ""}`}
+                    onClick={() => setActiveFilter("pottery")}
+                  >
+                    🏺 Pottery
+                  </button>
+                  <button
+                    className={`filter-btn ${activeFilter === "heritage" ? "active" : ""}`}
+                    onClick={() => setActiveFilter("heritage")}
+                  >
+                    🏛️ Heritage
+                  </button>
+                </div>
+
+                {/* Trail List */}
+                <div className="trail-list">
+                  {filteredRoadmaps.length === 0 ? (
+                    <div className="empty-state">No trails found</div>
+                  ) : (
+                    filteredRoadmaps.map((roadmap) => (
+                      <div
+                        key={roadmap._id}
+                        className={`trail-card ${selectedRoadmap?.slug === roadmap.slug ? "active" : ""}`}
+                        onClick={() => {
+                          setSelectedRoadmap(roadmap);
+                          setSelectedEvent(null);
+                          setIsNavigating(false);
+                          setNavigationRoute([]);
+                          setIsPanelMinimized(false);
+                          setIsSidebarOpen(false);
+                        }}
+                      >
+                        <div className="trail-icon" style={{ borderColor: roadmap.color }}>
+                          {roadmap.icon}
+                        </div>
+                        <div className="trail-info">
+                          <h4>{roadmap.name}</h4>
+                          <div className="trail-meta">
+                            <span>🕐 {roadmap.duration}</span>
+                            <span>📏 {roadmap.distance}</span>
+                          </div>
+                        </div>
+                        <span className="status-badge open">Active</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-              <span className="status-badge open">Active</span>
-            </div>
-          ))}
+            )}
+          </div>
 
-          {selectedRoadmap && (
-            <button
-              className="trail-card clear-card"
-              onClick={() => {
-                setSelectedRoadmap(null);
-                setIsNavigating(false);
-                setNavigationRoute([]);
-                setIsPanelMinimized(false);
-              }}
-            >
-              ✕ Clear Selection
-            </button>
+          {/* Events Section - Collapsible with Premium Design */}
+          {featuredEvents.length > 0 && (
+            <div className="sidebar-section events-section">
+              <button 
+                className="section-toggle"
+                onClick={() => setIsEventsExpanded(!isEventsExpanded)}
+              >
+                <div className="section-toggle-left">
+                  <span className="section-icon">🎉</span>
+                  <span className="section-title">Upcoming Events</span>
+                  <span className="event-count-badge">{featuredEvents.length}</span>
+                </div>
+                <span className={`section-chevron ${isEventsExpanded ? 'expanded' : ''}`}>▼</span>
+              </button>
+              
+              {isEventsExpanded && (
+                <div className="section-content">
+                  {/* View All Button */}
+                  <button 
+                    className="view-all-events-btn"
+                    onClick={handleViewAllEvents}
+                  >
+                    <span>🗺️ Show All on Map</span>
+                    <span className="arrow">→</span>
+                  </button>
+
+                  {/* Premium Event Cards */}
+                  <div className="events-list">
+                    {featuredEvents.map(evt => {
+                      const status = getEventStatus(evt.startDate, evt.endDate);
+                      const isSelected = selectedEvent?._id === evt._id;
+                      
+                      return (
+                        <div 
+                          key={evt._id} 
+                          className={`event-card ${isSelected ? 'selected' : ''} ${status}`}
+                          onClick={() => handleEventClick(evt)}
+                          style={{ '--event-color': evt.color || '#FF6B35' }}
+                        >
+                          {/* Gradient Accent */}
+                          <div className="event-card-accent" />
+                          
+                          {/* Event Icon */}
+                          <div className="event-card-icon">
+                            {evt.icon || '🎉'}
+                          </div>
+                          
+                          {/* Event Content */}
+                          <div className="event-card-content">
+                            <div className="event-card-header">
+                              <h4 className="event-card-title">{evt.name}</h4>
+                              <span className={`event-status-badge ${status}`}>
+                                {status === 'upcoming' && '⏳ Upcoming'}
+                                {status === 'ongoing' && '🔴 Live Now'}
+                                {status === 'past' && '✓ Ended'}
+                              </span>
+                            </div>
+                            
+                            <div className="event-card-meta">
+                              <span className="event-date-display">
+                                📅 {formatDateRange(evt.startDate, evt.endDate)}
+                              </span>
+                              {evt.locations && evt.locations.length > 0 && (
+                                <span className="event-locations-count">
+                                  📍 {evt.locations.length} location{evt.locations.length > 1 ? 's' : ''}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <p className="event-card-description">
+                              {evt.description?.length > 60 
+                                ? evt.description.substring(0, 60) + '...' 
+                                : evt.description}
+                            </p>
+                          </div>
+                          
+                          {/* Click Indicator */}
+                          <div className="event-card-arrow">
+                            <span>→</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </aside>
@@ -912,6 +1114,7 @@ export default function App() {
 
           {/* User Location */}
           <UserLocationMarker position={userPosition} />
+          
 
           {/* Place Markers - Only visible places (filtered by roadmap) */}
           {visiblePlaces.map((place) => {
@@ -963,7 +1166,101 @@ export default function App() {
               isNavigationRoute={true}
             />
           )}
+
+          {/* Live Recording Route - Shows GPS path while recording */}
+          {recordingData?.isRecording && recordingData?.coordinates?.length > 1 && (
+            <Polyline
+              positions={recordingData.coordinates.map(c => [c.lat, c.lng])}
+              pathOptions={{
+                color: '#ef4444',
+                weight: 4,
+                opacity: 0.9,
+                dashArray: '10, 5',
+              }}
+            />
+          )}
+
+          {/* Event Location Markers - Pulsing Animation */}
+          {selectedEvent && selectedEvent.locations && selectedEvent.locations.map((loc, idx) => (
+            loc?.coordinates && (
+              <Marker
+                key={`event-loc-${idx}`}
+                position={[loc.coordinates.lat, loc.coordinates.lng]}
+                icon={L.divIcon({
+                  className: "event-location-marker",
+                  html: `
+                    <div class="event-marker-wrapper" style="--event-color: ${selectedEvent.color || '#FF6B35'}">
+                      <div class="event-marker-pulse"></div>
+                      <div class="event-marker-core">
+                        ${selectedEvent.icon || '🎉'}
+                      </div>
+                      <div class="event-marker-label">${loc.name || 'Event Location'}</div>
+                    </div>
+                  `,
+                  iconSize: [60, 80],
+                  iconAnchor: [30, 40],
+                  popupAnchor: [0, -40],
+                })}
+              >
+                <Popup className="event-popup-container" maxWidth={300}>
+                  <div className="event-location-popup">
+                    <div className="event-popup-header" style={{ background: selectedEvent.color || '#FF6B35' }}>
+                      <span className="event-popup-icon">{selectedEvent.icon || '🎉'}</span>
+                      <span className="event-popup-name">{selectedEvent.name}</span>
+                    </div>
+                    <div className="event-popup-body">
+                      <h4 className="location-name">📍 {loc.name || 'Event Location'}</h4>
+                      {loc.address && <p className="location-address">{loc.address}</p>}
+                      {loc.note && <p className="location-note">{loc.note}</p>}
+                      <div className="event-popup-date">
+                        📅 {formatDateRange(selectedEvent.startDate, selectedEvent.endDate)}
+                      </div>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          ))}
         </MapContainer>
+
+        {/* Event Locations Panel - Floating on Map */}
+        {selectedEvent && (
+          <div className="event-locations-panel">
+            <button className="panel-close" onClick={() => setSelectedEvent(null)}>✕</button>
+            <div className="panel-header" style={{ background: selectedEvent.color || '#FF6B35' }}>
+              <span className="panel-icon">{selectedEvent.icon || '🎉'}</span>
+              <div className="panel-title-group">
+                <h3>{selectedEvent.name}</h3>
+                <span className="panel-date">{formatDateRange(selectedEvent.startDate, selectedEvent.endDate)}</span>
+              </div>
+            </div>
+            <div className="panel-body">
+              <p className="panel-description">{selectedEvent.description}</p>
+              <div className="panel-locations">
+                <h4>📍 Event Locations ({selectedEvent.locations?.length || 0})</h4>
+                <ul className="locations-list">
+                  {selectedEvent.locations?.map((loc, idx) => (
+                    <li 
+                      key={idx}
+                      className="location-item"
+                      onClick={() => {
+                        if (loc?.coordinates && mapInstance) {
+                          mapInstance.flyTo([loc.coordinates.lat, loc.coordinates.lng], 18, { duration: 0.5 });
+                        }
+                      }}
+                    >
+                      <span className="location-number">{idx + 1}</span>
+                      <div className="location-details">
+                        <strong>{loc.name || 'Location ' + (idx + 1)}</strong>
+                        {loc.address && <small>{loc.address}</small>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Map Controls */}
         <div className="map-controls">
@@ -1085,6 +1382,13 @@ export default function App() {
       <PlaceDetailModal 
         place={selectedPlace} 
         onClose={() => setSelectedPlace(null)} 
+      />
+
+      {/* Journey Recording Panel */}
+      <RecordingPanel
+        mapInstance={mapInstance}
+        onRecordingChange={setRecordingData}
+        currentRoadmap={selectedRoadmap}
       />
     </div>
   );

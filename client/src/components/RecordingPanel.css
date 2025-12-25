@@ -1,0 +1,323 @@
+/* ==================== */
+/* RECORDING PANEL */
+/* ==================== */
+
+.recording-panel {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Start Recording Button */
+.start-recording-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: none;
+  border-radius: 3rem;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+  transition: all 0.3s ease;
+}
+
+.start-recording-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(239, 68, 68, 0.5);
+}
+
+.start-recording-btn:disabled {
+  background: #6b7280;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.start-recording-btn .record-icon {
+  font-size: 1.25rem;
+  color: #fef2f2;
+  animation: pulse-record 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-record {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Recording Controls Container */
+.recording-controls {
+  background: rgba(26, 31, 46, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  min-width: 320px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.recording-panel.active .recording-controls {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.recording-panel.paused .recording-controls {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Recording Stats Display */
+.recording-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item .stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-item.duration .stat-value {
+  color: #ef4444;
+}
+
+.stat-item.duration.paused .stat-value {
+  color: #f59e0b;
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.stat-item .stat-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
+/* GPS Accuracy Indicator */
+.gps-accuracy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.gps-accuracy .gps-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b7280;
+}
+
+.gps-accuracy.good .gps-dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.gps-accuracy.fair .gps-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.gps-accuracy.poor .gps-dot {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  animation: pulse-gps 1s ease-in-out infinite;
+}
+
+@keyframes pulse-gps {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Control Buttons */
+.control-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.control-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-btn.resume {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.control-btn.resume:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.control-btn.pause {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.control-btn.pause:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.control-btn.stop {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.control-btn.stop:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.control-btn.stop:disabled {
+  background: #4b5563;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.control-btn.cancel {
+  flex: 0;
+  width: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+}
+
+.control-btn.cancel:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Minimum Time Notice */
+.min-time-notice {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #f59e0b;
+  margin-top: 0.75rem;
+}
+
+/* Error Message */
+.recording-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: #fca5a5;
+}
+
+.recording-error button {
+  background: none;
+  border: none;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0;
+  line-height: 1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .recording-panel {
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+  }
+
+  .recording-controls {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .stat-item .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .control-btn {
+    padding: 0.65rem 0.75rem;
+  }
+}
+
+/* Demo Mode Styles */
+.start-recording-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.demo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.demo-toggle input {
+  accent-color: #f59e0b;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.demo-toggle:hover {
+  color: #ffffff;
+}
+
+.demo-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f59e0b;
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 10;
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.05); }
+  100% { transform: translateX(-50%) scale(1); }
+}

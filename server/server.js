@@ -23,20 +23,18 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/places", require("./routes/places"));
 app.use("/api/roadmaps", require("./routes/roadmaps"));
 app.use("/api/craftsmen", require("./routes/craftsmen"));
+app.use("/api/events", require("./routes/events"));
 
 // ============ PROTECTED USER ROUTES ============
 app.use("/api/users", verifyToken, require("./routes/users"));
+app.use("/api/journeys", verifyToken, require("./routes/journeys"));
 
 // ============ PROTECTED ADMIN ROUTES ============
 app.use("/api/admin", verifyToken, isAdmin, require("./routes/admin"));
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Digital Sherpa API is running",
-    dbState: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-  });
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // Serve static files in production
@@ -49,6 +47,4 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
