@@ -1,11 +1,15 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ activeSection, onSectionChange, user, onLogout }) => {
+  const navigate = useNavigate();
+  
   const menuItems = [
     { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
     { id: 'places', icon: '📍', label: 'Places' },
     { id: 'craftsmen', icon: '👨‍🎨', label: 'Craftsmen' },
     { id: 'roadmaps', icon: '🗺️', label: 'Roadmaps' },
+    { id: 'events', icon: '🎉', label: 'Events' },
     { id: 'users', icon: '👥', label: 'Users' },
   ];
 
@@ -24,13 +28,23 @@ const Sidebar = ({ activeSection, onSectionChange, user, onLogout }) => {
         <span className="admin-badge">Admin</span>
       </div>
 
+      {/* Go to Maps Button */}
+      <button 
+        className="go-to-maps-btn"
+        onClick={() => navigate('/')}
+      >
+        <span className="maps-icon">🗺️</span>
+        <span>Go to Maps</span>
+        <span className="arrow">→</span>
+      </button>
+
       <nav className="sidebar-nav">
         {filteredItems.map(item => (
           <button
             key={item.id}
             className={`nav-item ${activeSection === item.id ? 'active' : ''}`}
             onClick={() => onSectionChange(item.id)}
-          > 
+          >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
           </button>
@@ -38,32 +52,13 @@ const Sidebar = ({ activeSection, onSectionChange, user, onLogout }) => {
       </nav>
 
       <div className="sidebar-footer">
-        {user && (
-          <div className="user-info">
-            <div className="user-avatar">
-              {user.avatar ? (
-                <img src={user.avatar} alt={user.name} />
-              ) : (
-                <span>{user.name?.charAt(0).toUpperCase() || '👤'}</span>
-              )}
-            </div>
-            <div className="user-details">
-              <span className="user-name">{user.name}</span>
-              <span className="user-role">{user.role}</span>
-            </div>
-          </div>
-        )}
-        
-        <div className="footer-actions">
-          <a href="/" className="back-to-map">
-            ← Back to Map
-          </a>
-          {user && (
-            <button onClick={onLogout} className="logout-btn">
-              🚪 Logout
-            </button>
-          )}
+        <div className="user-info">
+          <span className="user-name">{user?.name || 'Admin'}</span>
+          <span className="user-role">{user?.role}</span>
         </div>
+        <button className="logout-btn" onClick={onLogout}>
+          🚪 Logout
+        </button>
       </div>
     </aside>
   );

@@ -12,6 +12,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [stats, setStats] = useState(null);
+  const [journeys, setJourneys] = useState([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -39,6 +40,7 @@ const ProfilePage = () => {
         languages: user.languages || [],
       });
       fetchStats();
+      fetchJourneys();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -56,6 +58,61 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
+  };
+
+  const fetchJourneys = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch('/api/journeys?status=completed&limit=50', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setJourneys(data.journeys || []);
+      }
+    } catch (error) {
+      console.error('Error fetching journeys:', error);
+    }
+  };
+
+  const downloadJourney = async (journeyId, format = 'png') => {
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/journeys/${journeyId}/export`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ format, transparent: format === 'png' }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `journey_${journeyId}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      }
+    } catch (error) {
+      console.error('Error downloading journey:', error);
+    }
+  };
+
+  const formatDuration = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hrs > 0) return `${hrs}h ${mins}m`;
+    return `${mins}m`;
+  };
+
+  const formatDistance = (meters) => {
+    if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+    return `${Math.round(meters)} m`;
   };
 
   const handleChange = (e) => {
@@ -204,16 +261,16 @@ const ProfilePage = () => {
               📝 Profile
             </button>
             <button 
+              className={`tab ${activeTab === 'journeys' ? 'active' : ''}`}
+              onClick={() => setActiveTab('journeys')}
+            >
+              🚀 Journeys
+            </button>
+            <button 
               className={`tab ${activeTab === 'achievements' ? 'active' : ''}`}
               onClick={() => setActiveTab('achievements')}
             >
-              🏆 Achievements
-            </button>
-            <button 
-              className={`tab ${activeTab === 'trails' ? 'active' : ''}`}
-              onClick={() => setActiveTab('trails')}
-            >
-              🗺️ Trails
+              🏆 Badges
             </button>
             <button 
               className={`tab ${activeTab === 'security' ? 'active' : ''}`}
@@ -345,6 +402,89 @@ const ProfilePage = () => {
             </div>
           )}
 
+          {/* Journeys Tab - NEW */}
+          {activeTab === 'journeys' && (
+            <div className="tab-content">
+              <h3>🚀 My Journeys</h3>
+              
+              {/* Journey Stats */}
+              <div className="journey-stats">
+                <div className="journey-stat">
+                  <span className="stat-number">{journeys.length}</span>
+                  <span className="stat-text">Total Journeys</span>
+                </div>
+                <div className="journey-stat">
+                  <span className="stat-number">
+                    {(journeys.reduce((sum, j) => sum + (j.distance || 0), 0) / 1000).toFixed(1)}
+                  </span>
+                  <span className="stat-text">km Recorded</span>
+                </div>
+                <div className="journey-stat">
+                  <span className="stat-number">
+                    {formatDuration(journeys.reduce((sum, j) => sum + (j.duration || 0), 0))}
+                  </span>
+                  <span className="stat-text">Total Time</span>
+                </div>
+              </div>
+
+              {/* Journey Cards */}
+              {journeys.length > 0 ? (
+                <div className="journeys-grid">
+                  {journeys.map((journey) => (
+                    <div key={journey._id} className="journey-card">
+                      {journey.trackImage?.url ? (
+                        <div className="journey-image">
+                          <img src={journey.trackImage.url} alt={journey.title} />
+                        </div>
+                      ) : (
+                        <div className="journey-image placeholder">
+                          <span>🗺️</span>
+                        </div>
+                      )}
+                      <div className="journey-info">
+                        <h4>{journey.title}</h4>
+                        <div className="journey-meta">
+                          <span>📅 {new Date(journey.createdAt).toLocaleDateString()}</span>
+                          <span>📍 {formatDistance(journey.distance)}</span>
+                          <span>⏱️ {formatDuration(journey.duration)}</span>
+                        </div>
+                        {journey.roadmapName && (
+                          <span className="journey-roadmap">
+                            🛤️ {journey.roadmapName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="journey-actions">
+                        <button 
+                          className="download-btn"
+                          onClick={() => downloadJourney(journey._id, 'png')}
+                          title="Download PNG"
+                        >
+                          📥 PNG
+                        </button>
+                        <button 
+                          className="download-btn"
+                          onClick={() => downloadJourney(journey._id, 'jpg')}
+                          title="Download JPG"
+                        >
+                          📥 JPG
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <span className="empty-icon">🏃</span>
+                  <p>No journeys recorded yet.</p>
+                  <button className="explore-btn" onClick={() => navigate('/')}>
+                    Start Recording →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Achievements Tab */}
           {activeTab === 'achievements' && (
             <div className="tab-content">
@@ -366,7 +506,7 @@ const ProfilePage = () => {
               ) : (
                 <div className="empty-state">
                   <span className="empty-icon">🎯</span>
-                  <p>No badges yet. Complete trails to earn badges!</p>
+                  <p>No badges yet. Record journeys to earn badges!</p>
                 </div>
               )}
 
@@ -375,85 +515,33 @@ const ProfilePage = () => {
               <div className="badges-grid locked">
                 <div className="badge-card locked">
                   <span className="badge-icon">🥾</span>
+                  <h4>First Steps</h4>
+                  <p>Complete your first journey</p>
+                  <span className="badge-progress">{journeys.length}/1</span>
+                </div>
+                <div className="badge-card locked">
+                  <span className="badge-icon">🔥</span>
                   <h4>Trail Blazer</h4>
-                  <p>Complete your first trail</p>
-                  <span className="badge-progress">0/1</span>
+                  <p>Complete 5 journeys</p>
+                  <span className="badge-progress">{journeys.length}/5</span>
                 </div>
                 <div className="badge-card locked">
                   <span className="badge-icon">🗺️</span>
                   <h4>Explorer</h4>
-                  <p>Complete 5 trails</p>
-                  <span className="badge-progress">{stats?.totalTrails || 0}/5</span>
+                  <p>Record 10km total</p>
+                  <span className="badge-progress">
+                    {(journeys.reduce((sum, j) => sum + (j.distance || 0), 0) / 1000).toFixed(1)}/10 km
+                  </span>
                 </div>
                 <div className="badge-card locked">
-                  <span className="badge-icon">⛰️</span>
-                  <h4>Adventurer</h4>
-                  <p>Complete 10 trails</p>
-                  <span className="badge-progress">{stats?.totalTrails || 0}/10</span>
-                </div>
-                <div className="badge-card locked">
-                  <span className="badge-icon">🏔️</span>
-                  <h4>Mountain Master</h4>
-                  <p>Complete 25 trails</p>
-                  <span className="badge-progress">{stats?.totalTrails || 0}/25</span>
+                  <span className="badge-icon">🏃</span>
+                  <h4>Marathon</h4>
+                  <p>Record 42km total</p>
+                  <span className="badge-progress">
+                    {(journeys.reduce((sum, j) => sum + (j.distance || 0), 0) / 1000).toFixed(1)}/42 km
+                  </span>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Trails Tab */}
-          {activeTab === 'trails' && (
-            <div className="tab-content">
-              <h3>🗺️ Completed Trails</h3>
-              
-              {/* Stats Overview */}
-              {stats && (
-                <div className="trails-stats">
-                  <div className="trail-stat">
-                    <span className="stat-number">{stats.totalTrails}</span>
-                    <span className="stat-text">Total Trails</span>
-                  </div>
-                  <div className="trail-stat">
-                    <span className="stat-number">{stats.totalDistance?.toFixed(1) || 0}</span>
-                    <span className="stat-text">km Traveled</span>
-                  </div>
-                  <div className="trail-stat">
-                    <span className="stat-number">{stats.favoriteRoadmaps || 0}</span>
-                    <span className="stat-text">Favorites</span>
-                  </div>
-                </div>
-              )}
-
-              {user.completedTrails && user.completedTrails.length > 0 ? (
-                <div className="trails-list">
-                  {user.completedTrails.map((trail, idx) => (
-                    <div key={idx} className="trail-card">
-                      <div className="trail-info">
-                        <h4>{trail.roadmapName || trail.roadmapSlug}</h4>
-                        <span className="trail-date">
-                          {new Date(trail.completedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {trail.rating && (
-                        <div className="trail-rating">
-                          {'⭐'.repeat(trail.rating)}
-                        </div>
-                      )}
-                      {trail.duration && (
-                        <span className="trail-duration">{trail.duration} min</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <span className="empty-icon">🚶</span>
-                  <p>No trails completed yet.</p>
-                  <button className="explore-btn" onClick={() => navigate('/')}>
-                    Start Exploring →
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
@@ -515,14 +603,6 @@ const ProfilePage = () => {
                     <span className="info-label">Account Created</span>
                     <span className="info-value">
                       {new Date(user.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Last Login</span>
-                    <span className="info-value">
-                      {user.lastLogin 
-                        ? new Date(user.lastLogin).toLocaleString() 
-                        : 'N/A'}
                     </span>
                   </div>
                   <div className="info-row">

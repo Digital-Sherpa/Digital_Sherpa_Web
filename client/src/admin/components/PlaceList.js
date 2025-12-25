@@ -178,7 +178,7 @@ const PlaceList = () => {
                     <td>
                       {(place.hasWorkshop || place.workshopAvailable) ? (
                         <span className="badge workshop">
-                          Rs. {place.workshopPrice?.halfDay || place.workshopPrice || '-'}
+                          Rs. {place.workshopPrice?.halfDay || place.workshopPrice?.fullDay || '-'}
                         </span>
                       ) : (
                         <span className="badge none">-</span>
