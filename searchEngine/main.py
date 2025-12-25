@@ -85,6 +85,8 @@ class SearchResult(BaseModel):
     category: Optional[str] = None
     lat: Optional[float] = None
     lon: Optional[float] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class SearchResultWithDetails(SearchResult):
@@ -154,26 +156,36 @@ def search_places(request: SearchRequest):
     """
     Basic semantic search for places.
     Returns matching places with scores and basic metadata.
+    Now enriched with Name and Description from MongoDB if available.
     """
     if not search_service:
         raise HTTPException(status_code=500, detail="Search service is not initialized.")
     
     try:
+        # Enable full details to get Name/Description from MongoDB
         results = search_service.search(
             request.query, 
             top_k=request.top_k,
-            include_full_details=False
+            include_full_details=True
         )
         
         response_data = []
         for res in results:
             meta = res.get("metadata", {})
+            full_details = res.get("full_details", {})
+            
+            # Map name/description from MongoDB details if available, else None
+            name = full_details.get("name")
+            description = full_details.get("description")
+            
             response_data.append(SearchResult(
                 place_id=res.get("place_id"),
                 score=res.get("score"),
                 category=meta.get("category"),
                 lat=meta.get("lat"),
-                lon=meta.get("lon")
+                lon=meta.get("lon"),
+                name=name,
+                description=description
             ))
             
         return response_data
@@ -294,4 +306,10 @@ def get_all_places(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
 

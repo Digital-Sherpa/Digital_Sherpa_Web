@@ -1079,20 +1079,24 @@ const formatDateRange = (startDate, endDate) => {
                       <div className="search-results-list">
                         {searchResults.map((result, index) => {
                           const placeDetails = result.full_details || {};
-                          const placeName = placeDetails.name || result.place_id;
-                          const placeCategory = placeDetails.category || result.category;
-                          const placeImage = placeDetails.imageUrl;
+                          
+                          // Resolve place from local state (places already loaded)
+                          const matchedPlace = places.find(p => 
+                            p._id === result.place_id || 
+                            (placeDetails.slug && p.slug === placeDetails.slug)
+                          );
+                          
+                          // Prioritize local data, then search result enriched data, finally fallback (but try to avoid ID)
+                          const placeName = matchedPlace?.name || result.name || placeDetails.name || "Unknown Place";
+                          const placeDescription = matchedPlace?.description || result.description || placeDetails.description;
+                          const placeCategory = matchedPlace?.category || placeDetails.category || result.category;
+                          const placeImage = matchedPlace?.imageUrl || placeDetails.imageUrl;
                           
                           return (
                             <div 
                               key={result.place_id || index}
                               className="search-result-item"
                               onClick={() => {
-                                // Find matching place and zoom to it
-                                const matchedPlace = places.find(p => 
-                                  p._id === result.place_id || 
-                                  p.slug === placeDetails.slug
-                                );
                                 if (matchedPlace && mapInstance) {
                                   mapInstance.flyTo(
                                     [matchedPlace.coordinates.lat, matchedPlace.coordinates.lng], 
@@ -1117,7 +1121,11 @@ const formatDateRange = (startDate, endDate) => {
                               </div>
                               <div className="search-result-info">
                                 <h4>{placeName}</h4>
-                                <span className="search-result-id">ID: {result.place_id}</span>
+                                {placeDescription && (
+                                  <p className="search-result-description" style={{ fontSize: '0.8rem', color: '#9ca3af', margin: '4px 0', lineHeight: '1.3' }}>
+                                    {placeDescription.length > 60 ? placeDescription.substring(0, 60) + '...' : placeDescription}
+                                  </p>
+                                )}
                                 <div className="search-result-meta">
                                   <span className="search-result-category">
                                     {categoryEmojis[placeCategory] || '📍'} {placeCategory || 'Place'}
