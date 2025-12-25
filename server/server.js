@@ -29,6 +29,7 @@ app.use("/api/events", require("./routes/events"));
 // ============ PROTECTED USER ROUTES ============
 app.use("/api/users", verifyToken, require("./routes/users"));
 app.use("/api/journeys", verifyToken, require("./routes/journeys"));
+app.use("/api/bookings", require("./routes/bookings"));
 
 // ============ PROTECTED ADMIN ROUTES ============
 app.use("/api/admin", verifyToken, isAdmin, require("./routes/admin"));

@@ -8,6 +8,7 @@ const roadmapsRoutes = require("./roadmaps");
 const uploadRoutes = require("./upload");
 const usersRoutes = require("./users");
 const eventsRoutes = require("./events");
+const bookingsRoutes = require("./bookings");
 
 // Mount routes
 router.use("/places", placesRoutes);
@@ -16,6 +17,7 @@ router.use("/roadmaps", roadmapsRoutes);
 router.use("/upload", uploadRoutes);
 router.use("/users", usersRoutes);
 router.use("/events", eventsRoutes);
+router.use("/bookings", bookingsRoutes);
 
 // Dashboard stats
 router.get("/stats", async (req, res) => {
@@ -25,6 +27,7 @@ router.get("/stats", async (req, res) => {
     const Roadmap = require("../../models/Roadmap");
     const User = require("../../models/User");
     const Event = require("../../models/Event");
+    const Booking = require("../../models/Booking");
 
     const [
       placesCount, 
@@ -39,6 +42,9 @@ router.get("/stats", async (req, res) => {
       adminUsers,
       featuredEvents,
       upcomingEvents,
+      bookingsCount,
+      confirmedBookings,
+      pendingBookings,
     ] = await Promise.all([
       Place.countDocuments(),
       Craftsman.countDocuments(),
@@ -52,6 +58,9 @@ router.get("/stats", async (req, res) => {
       User.countDocuments({ role: { $in: ["admin", "superadmin"] } }),
       Event.countDocuments({ isFeatured: true, isActive: true }),
       Event.countDocuments({ isActive: true, startDate: { $gte: new Date() } }),
+      Booking.countDocuments(),
+      Booking.countDocuments({ status: "confirmed" }),
+      Booking.countDocuments({ status: "pending" }),
     ]);
 
     // Get category breakdown
@@ -92,6 +101,11 @@ router.get("/stats", async (req, res) => {
         featured: featuredEvents,
         upcoming: upcomingEvents,
         byCategory: eventsByCategory,
+      },
+      bookings: {
+        total: bookingsCount,
+        confirmed: confirmedBookings,
+        pending: pendingBookings,
       },
     });
   } catch (error) {
