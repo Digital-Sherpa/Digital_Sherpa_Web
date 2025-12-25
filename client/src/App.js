@@ -543,26 +543,61 @@ function PlaceDetailModal({ place, onClose }) {
             </div>
           )}
 
-          {/* Video Tab - Improved */}
+          {/* Video Tab - Improved with YouTube Support */}
           {activeTab === 'video' && (
             <div className="modal-video">
-              {videos.map((video, idx) => (
-                <div key={idx} className="video-player-container">
-                  {video.title && <h4 className="video-title">{video.title}</h4>}
-                  <video 
-                    ref={idx === 0 ? videoRef : null}
-                    controls 
-                    autoPlay
-                    playsInline
-                    preload="auto"
-                    poster={video.thumbnail || place.imageUrl}
-                    className="video-player"
-                  >
-                    <source src={video.url} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              ))}
+              {videos.map((video, idx) => {
+                const isYouTube = video.url && (video.url.includes('youtube.com') || video.url.includes('youtu.be'));
+                let embedUrl = video.url;
+                
+                if (isYouTube) {
+                  // Extract Video ID
+                  let videoId = '';
+                  if (video.url.includes('youtu.be')) {
+                    videoId = video.url.split('/').pop();
+                  } else if (video.url.includes('v=')) {
+                    videoId = video.url.split('v=')[1].split('&')[0];
+                  } else if (video.url.includes('embed/')) {
+                    videoId = video.url.split('embed/')[1].split('?')[0];
+                  }
+                  
+                  if (videoId) {
+                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${idx === 0 ? 1 : 0}&mute=0`;
+                  }
+                }
+
+                return (
+                  <div key={idx} className="video-player-container">
+                    {video.title && <h4 className="video-title">{video.title}</h4>}
+                    
+                    {isYouTube ? (
+                      <div className="youtube-embed-wrapper">
+                        <iframe
+                          src={embedUrl}
+                          title={video.title || "YouTube video player"}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="video-player iframe-player"
+                        ></iframe>
+                      </div>
+                    ) : (
+                      <video 
+                        ref={idx === 0 ? videoRef : null}
+                        controls 
+                        autoPlay={idx === 0}
+                        playsInline
+                        preload="auto"
+                        poster={video.thumbnail || place.imageUrl}
+                        className="video-player"
+                      >
+                        <source src={video.url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

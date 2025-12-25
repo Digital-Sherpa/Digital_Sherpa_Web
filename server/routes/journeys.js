@@ -247,18 +247,33 @@ router.put("/:id/stop", async (req, res) => {
 
     // Generate and upload track image
     try {
-      const trackImage = await trackImageService.generateAndUpload(
-        journey.coordinates,
-        {
-          userId: req.user._id.toString(),
-          journeyId: journey._id.toString(),
-          distance: journey.distance,
-          duration: journey.duration,
-        }
-      );
+      const { trackImage: trackImageBase64 } = req.body;
+      let trackImage;
+
+      if (trackImageBase64) {
+        // Upload client-captured image
+        trackImage = await trackImageService.uploadTrackImage(
+          trackImageBase64,
+          {
+            userId: req.user._id.toString(),
+            journeyId: journey._id.toString(),
+          }
+        );
+      } else {
+        // Fallback to server-side generation (mocked)
+        trackImage = await trackImageService.generateAndUpload(
+          journey.coordinates,
+          {
+            userId: req.user._id.toString(),
+            journeyId: journey._id.toString(),
+            distance: journey.distance,
+            duration: journey.duration,
+          }
+        );
+      }
       journey.trackImage = trackImage;
     } catch (imageError) {
-      console.error("Track image generation error:", imageError);
+      console.error("Track image generation/upload error:", imageError);
       // Continue without image - don't fail the whole request
     }
 
@@ -443,30 +458,29 @@ router.post("/:id/export", async (req, res) => {
       return res.status(404).json({ message: "Completed journey not found" });
     }
 
-    if (journey.coordinates.length < 2) {
-      return res.status(400).json({ message: "Not enough coordinates" });
+    // If we have a real track image, download and serve that
+    if (journey.trackImage && journey.trackImage.url) {
+      const axios = require('axios');
+      const response = await axios({
+        method: 'GET',
+        url: journey.trackImage.url,
+        responseType: 'stream'
+      });
+
+      const contentType = format === "png" ? "image/png" : "image/jpeg";
+      const filename = `journey_${journey._id}.${format}`;
+
+      res.set({
+        "Content-Type": contentType,
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      });
+
+      response.data.pipe(res);
+      return;
     }
 
-    const imageBuffer = trackImageService.generateForDownload(
-      journey.coordinates,
-      {
-        format,
-        transparent,
-        distance: journey.distance,
-        duration: journey.duration,
-      }
-    );
-
-    const contentType = format === "png" ? "image/png" : "image/jpeg";
-    const filename = `journey_${journey._id}.${format}`;
-
-    res.set({
-      "Content-Type": contentType,
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Content-Length": imageBuffer.length,
-    });
-
-    res.send(imageBuffer);
+    // Fallback if no image exists (legacy or error)
+    return res.status(404).json({ message: "No track image available for this journey" });
   } catch (error) {
     console.error("Export journey error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
