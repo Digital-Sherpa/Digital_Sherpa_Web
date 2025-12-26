@@ -73,6 +73,7 @@ router.post("/", async (req, res) => {
       tags,
       hasWorkshop,
       isSponsored,
+      audioUrl,
     } = req.body;
 
     // Generate slug from name
@@ -102,6 +103,7 @@ router.post("/", async (req, res) => {
       tags: tags || [],
       hasWorkshop: hasWorkshop || false,
       isSponsored: isSponsored || false,
+      audioUrl: audioUrl || undefined,
     });
 
     const savedPlace = await place.save();
@@ -136,6 +138,7 @@ router.put("/:id", async (req, res) => {
       tags,
       hasWorkshop,
       isSponsored,
+      audioUrl,
     } = req.body;
 
     // Update slug if name changed
@@ -165,6 +168,7 @@ router.put("/:id", async (req, res) => {
     if (tags !== undefined) place.tags = tags;
     if (hasWorkshop !== undefined) place.hasWorkshop = hasWorkshop;
     if (isSponsored !== undefined) place.isSponsored = isSponsored;
+    if (audioUrl !== undefined) place.audioUrl = audioUrl;
 
     const updatedPlace = await place.save();
     res.json(updatedPlace);

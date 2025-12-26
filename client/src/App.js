@@ -11,6 +11,7 @@ import RecordingPanel from "./components/RecordingPanel";
 import BookingModal from "./components/BookingModal";
 import CraftsmanListModal from "./components/CraftsmanListModal";
 import CraftsmanDetailModal from "./components/CraftsmanDetailModal";
+import AudioGuide from "./components/AudioGuide";
 
 // User Menu Component
 function UserMenu() {
@@ -94,6 +95,33 @@ const createImageIcon = (imageUrl, color, fallbackEmoji) => {
     iconSize: [52, 52],
     iconAnchor: [26, 26],
     popupAnchor: [0, -26],
+  });
+};
+
+// Create sponsored marker icon with gold styling, star indicator, and tagline
+const createSponsoredIcon = (imageUrl, fallbackEmoji, tagline) => {
+  const hasImage = imageUrl && !imageUrl.includes("undefined");
+  
+  return L.divIcon({
+    className: "custom-div-icon sponsored-marker-wrapper",
+    html: hasImage 
+      ? `
+        <div class="marker-container marker-sponsored">
+          <div class="sponsored-star-indicator">⭐</div>
+          <img src="${imageUrl}" alt="sponsored" class="marker-image" />
+        </div>
+        ${tagline ? `<div class="sponsored-label">${tagline}</div>` : ''}
+      `
+      : `
+        <div class="marker-container marker-sponsored marker-emoji">
+          <div class="sponsored-star-indicator">⭐</div>
+          ${fallbackEmoji}
+        </div>
+        ${tagline ? `<div class="sponsored-label">${tagline}</div>` : ''}
+      `,
+    iconSize: [56, 75],
+    iconAnchor: [28, 37],
+    popupAnchor: [0, -37],
   });
 };
 
@@ -1336,9 +1364,14 @@ const formatDateRange = (startDate, endDate) => {
           {visiblePlaces.map((place) => {
             const color = categoryColors[place.category] || categoryColors.default;
             const emoji = categoryEmojis[place.category] || categoryEmojis.default;
-            const icon = createImageIcon(place.imageUrl, color, emoji);
             const stopNumber = fullRoadmap?.stops.find((s) => s.placeSlug === place.slug)?.order;
-            const isSponsored = fullRoadmap?.sponsoredStops.some((s) => s.placeSlug === place.slug);
+            const sponsoredStop = fullRoadmap?.sponsoredStops?.find((s) => s.placeSlug === place.slug);
+            const isSponsored = !!sponsoredStop;
+            
+            // Use sponsored icon for sponsored places, regular icon otherwise
+            const icon = isSponsored 
+              ? createSponsoredIcon(place.imageUrl, emoji, sponsoredStop.note)
+              : createImageIcon(place.imageUrl, color, emoji);
 
             return (
               <Marker
@@ -1373,6 +1406,35 @@ const formatDateRange = (startDate, endDate) => {
               {!isNavigating && <FitBounds coordinates={routeCoords} />}
             </>
           )}
+
+          {/* Sponsored Place Route Lines - Lighter gold colored connections */}
+          {fullRoadmap?.sponsoredStops?.map((sponsoredStop) => {
+            const sponsoredPlace = places.find((p) => p.slug === sponsoredStop.placeSlug);
+            if (!sponsoredPlace) return null;
+            
+            // Find the stop this sponsored place is after
+            const afterStopData = fullRoadmap.stops.find((s) => s.order === sponsoredStop.afterStop);
+            if (!afterStopData) return null;
+            
+            const afterPlace = places.find((p) => p.slug === afterStopData.placeSlug);
+            if (!afterPlace) return null;
+            
+            const startPos = [afterPlace.coordinates.lat, afterPlace.coordinates.lng];
+            const endPos = [sponsoredPlace.coordinates.lat, sponsoredPlace.coordinates.lng];
+            
+            return (
+              <Polyline
+                key={`sponsored-route-${sponsoredStop.placeSlug}`}
+                positions={[startPos, endPos]}
+                pathOptions={{
+                  color: '#FFD700',
+                  weight: 4,
+                  opacity: 0.5,
+                  dashArray: '8, 8',
+                }}
+              />
+            );
+          })}
 
           {/* Navigation Route (User to First Stop) */}
           {isNavigating && navigationRoute.length > 1 && (
@@ -1684,6 +1746,15 @@ const formatDateRange = (startDate, endDate) => {
         mapInstance={mapInstance}
         onRecordingChange={setRecordingData}
         currentRoadmap={selectedRoadmap}
+      />
+
+      {/* Audio Guide - Location-based audio playback */}
+      <AudioGuide
+        userPosition={userPosition}
+        stops={fullRoadmap?.stops || []}
+        places={places}
+        isNavigating={isNavigating}
+        currentRoadmap={fullRoadmap}
       />
     </div>
   );

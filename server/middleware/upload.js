@@ -23,6 +23,9 @@ const storage = new CloudinaryStorage({
     if (file.mimetype.startsWith("video/")) {
       resourceType = "video";
       folder = "digital_sherpa/videos";
+    } else if (file.mimetype.startsWith("audio/")) {
+      resourceType = "video"; // Cloudinary treats audio as "video" resource type
+      folder = "digital_sherpa/audio";
     } else {
       // Image transformations
       transformation = [
@@ -45,11 +48,12 @@ const storage = new CloudinaryStorage({
 const fileFilter = (req, file, cb) => {
   const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   const allowedVideoTypes = ["video/mp4", "video/quicktime", "video/webm", "video/x-msvideo"];
+  const allowedAudioTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/vnd.wav", "audio/m4a", "audio/mp4", "audio/x-m4a"];
 
-  if (allowedImageTypes.includes(file.mimetype) || allowedVideoTypes.includes(file.mimetype)) {
+  if (allowedImageTypes.includes(file.mimetype) || allowedVideoTypes.includes(file.mimetype) || allowedAudioTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type. Only images (jpg, png, webp, gif) and videos (mp4, mov, webm) are allowed."), false);
+    cb(new Error("Invalid file type. Only images, videos, and audio files are allowed."), false);
   }
 };
 

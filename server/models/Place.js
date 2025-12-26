@@ -47,6 +47,8 @@ const placeSchema = new mongoose.Schema({
   tags: [{ type: String }],
   hasWorkshop: { type: Boolean, default: false },
   isSponsored: { type: Boolean, default: false },
+  // Audio guide MP3 URL for location-based audio playback
+  audioUrl: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

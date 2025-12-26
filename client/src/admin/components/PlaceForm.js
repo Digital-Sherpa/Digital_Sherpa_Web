@@ -20,6 +20,7 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
     gallery: [],
     videoUrl: '',
     videos: [],
+    audioUrl: '',
     hasWorkshop: false,
     workshopPrice: {
       halfDay: '',
@@ -119,6 +120,7 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
         gallery: place.gallery || [],
         videoUrl: place.videoUrl || '',
         videos: place.videos || [],
+        audioUrl: place.audioUrl || '',
         hasWorkshop: place.hasWorkshop || false,
         workshopPrice: {
           halfDay: place.workshopPrice?.halfDay || '',
@@ -327,6 +329,36 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
     }));
   };
 
+  const handleAudioUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('audio/')) {
+      setUploadProgress('✗ Error: Please select an audio file (MP3, WAV, etc.)');
+      setTimeout(() => setUploadProgress(''), 3000);
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress('Uploading audio guide...');
+
+    try {
+      const result = await uploadApi.uploadSingle(file, 'audio');
+      setFormData(prev => ({ ...prev, audioUrl: result.url }));
+      setUploadProgress('✓ Audio uploaded!');
+    } catch (err) {
+      setUploadProgress(`✗ Error: ${err.message}`);
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadProgress(''), 3000);
+    }
+  };
+
+  const removeAudio = () => {
+    setFormData(prev => ({ ...prev, audioUrl: '' }));
+  };
+
   const handleAddTag = () => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
       setFormData(prev => ({
@@ -367,6 +399,7 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
       gallery: formData.gallery,
       videoUrl: formData.videoUrl || undefined,
       videos: formData.videos,
+      audioUrl: formData.audioUrl || undefined,
       hasWorkshop: formData.hasWorkshop,
       workshopPrice: formData.hasWorkshop ? {
         halfDay: parseFloat(formData.workshopPrice.halfDay) || undefined,
@@ -810,6 +843,67 @@ const PlaceForm = ({ place, onSave, onCancel, loading }) => {
               <button type="button" onClick={() => removeTag(tag)}>×</button>
             </span>
           ))}
+        </div>
+      </div>
+
+      {/* Audio Guide Section */}
+      <div className="form-section">
+        <h3>🎧 Audio Guide</h3>
+        <p className="form-help-text" style={{ fontSize: '0.875rem', color: '#9ca3af', marginBottom: '1rem' }}>
+          Upload an MP3 audio guide that will auto-play when users approach this location.
+        </p>
+        <div className="upload-zone">
+          <input
+            type="file"
+            accept="audio/*"
+            onChange={handleAudioUpload}
+            disabled={uploading}
+            id="audio-upload"
+          />
+          <label htmlFor="audio-upload" className="upload-label">
+            🎵 Click to upload audio guide (MP3)
+          </label>
+        </div>
+        
+        {formData.audioUrl && (
+          <div className="audio-preview" style={{
+            marginTop: '1rem',
+            padding: '1rem',
+            background: 'rgba(16, 185, 129, 0.1)',
+            borderRadius: '0.5rem',
+            border: '1px solid rgba(16, 185, 129, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '1.5rem' }}>🎧</span>
+              <span style={{ color: '#10b981', fontWeight: '500' }}>Audio Guide Uploaded</span>
+            </div>
+            <audio 
+              controls 
+              src={formData.audioUrl} 
+              style={{ width: '100%', marginBottom: '0.5rem' }}
+            >
+              Your browser does not support the audio element.
+            </audio>
+            <button 
+              type="button" 
+              onClick={removeAudio} 
+              className="remove-btn"
+              style={{ marginTop: '0.5rem' }}
+            >
+              Remove Audio
+            </button>
+          </div>
+        )}
+        
+        <div className="form-group" style={{ marginTop: '1rem' }}>
+          <label>Or paste Audio URL (Cloudinary/S3)</label>
+          <input
+            type="url"
+            name="audioUrl"
+            value={formData.audioUrl}
+            onChange={handleChange}
+            placeholder="https://..."
+          />
         </div>
       </div>
 
