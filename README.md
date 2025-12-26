@@ -228,16 +228,6 @@ npm start
 
 ---
 
-## 🗺️ Current Trails
-
-| Trail | Description | Duration | Difficulty |
-|-------|-------------|----------|------------|
-| 🪵 Wood Carving Trail | Traditional Newari woodcarving from masterpieces to workshops | 3-4 hours | Easy |
-| 🏺 Pottery Experience | Centuries-old pottery traditions at Pottery Square | 2-3 hours | Easy |
-| 🏛️ Heritage Walk | UNESCO World Heritage sites and ancient squares | 2 hours | Easy |
-
----
-
 
 ## 📊 API Endpoints
 
@@ -326,9 +316,7 @@ MIT License - see LICENSE file for details
 
 ## 📞 Contact
 
-- **Project Lead**: [Your Name]
-- **Email**: [your.email@example.com]
-- **Website**: [Coming Soon]
+- **Email**: [digitalsherpa15@gmail.com]
 
 ---
 
